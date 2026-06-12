@@ -1,0 +1,3942 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argo Mini | Tactical Operations & Telemetry Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ============ BLACK + WARM GOLDEN PALETTE ============ */
+        :root {
+            --bg-app: #fdfaf2;
+            --bg-card: #ffffff;
+            --bg-sidebar: #ffffff;
+            --border-color: #ece3cf;
+            --text-primary: #1a1408;
+            --text-secondary: #7a6a4a;
+            --accent: #b8862a;
+            --accent-hover: #a07320;
+            --accent-light: #fbf1d6;
+            --accent-soft: #f5e3b3;
+            --accent-gradient: linear-gradient(135deg, #e8b94a 0%, #b8862a 55%, #8a5f15 100%);
+            --gold-glow: rgba(232, 185, 74, 0.45);
+            --danger: #d94848;
+            --danger-hover: #b73a3a;
+            --danger-light: #fbe6e6;
+            --success: #4f9a6a;
+            --success-light: #e3f3e8;
+            --warning: #d49019;
+            --warning-light: #fbeed1;
+            --shadow: 0 8px 24px rgba(184, 134, 42, 0.08);
+            --shadow-md: 0 16px 40px rgba(26, 20, 8, 0.10);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-app: #07060a;
+            --bg-card: #0e0c12;
+            --bg-sidebar: #0a0810;
+            --border-color: #1f1a26;
+            --text-primary: #f6ecd2;
+            --text-secondary: #8b7f63;
+            --accent: #e8b94a;
+            --accent-hover: #f4cb6a;
+            --accent-light: #2a1f0a;
+            --accent-soft: #3a2a0e;
+            --accent-gradient: linear-gradient(135deg, #ffd97a 0%, #e8b94a 45%, #a87420 100%);
+            --gold-glow: rgba(232, 185, 74, 0.55);
+            --danger: #ff6b6b;
+            --danger-hover: #ff8585;
+            --danger-light: #2e1414;
+            --success: #5fd49a;
+            --success-light: #0f2a1c;
+            --warning: #f0b340;
+            --warning-light: #2b1f0a;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+            --shadow-md: 0 20px 60px rgba(0, 0, 0, 0.75);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            position: relative;
+        }
+
+        /* Ambient animated gold aura layer */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(600px circle at 15% 20%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 60%),
+                radial-gradient(700px circle at 85% 85%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 65%);
+            z-index: 0;
+            animation: auraDrift 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes auraDrift {
+            0% {
+                transform: translate3d(0, 0, 0) scale(1);
+                opacity: .85;
+            }
+
+            100% {
+                transform: translate3d(-30px, 20px, 0) scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        /* Cursor-following gold spotlight */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+            transform: translate(var(--mx, -9999px), var(--my, -9999px)) translate(-50%, -50%);
+            transition: opacity .4s ease;
+            opacity: .6;
+            z-index: 1;
+        }
+
+        [data-theme="light"] body::after {
+            mix-blend-mode: multiply;
+            opacity: .25;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 32px 24px;
+            z-index: 10;
+            position: relative;
+            transition: var(--transition);
+            box-shadow: inset -1px 0 0 color-mix(in oklab, var(--accent) 15%, transparent);
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, var(--accent) 50%, transparent);
+            opacity: .35;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 40px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1408;
+            font-weight: 800;
+            font-size: 22px;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 20px var(--gold-glow), inset 0 1px 0 rgba(255, 255, 255, .4);
+            position: relative;
+            animation: logoPulse 4s ease-in-out infinite;
+        }
+
+        .brand-logo::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            background: var(--accent-gradient);
+            filter: blur(10px);
+            opacity: .5;
+            z-index: -1;
+        }
+
+        @keyframes logoPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 20px var(--gold-glow), inset 0 1px 0 rgba(255, 255, 255, .4);
+            }
+
+            50% {
+                box-shadow: 0 4px 32px var(--gold-glow), 0 0 50px var(--gold-glow), inset 0 1px 0 rgba(255, 255, 255, .4);
+            }
+        }
+
+        .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 15px;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) scaleY(0);
+            width: 3px;
+            height: 60%;
+            background: var(--accent-gradient);
+            border-radius: 0 3px 3px 0;
+            transition: transform .3s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: var(--text-primary);
+            background-color: var(--accent-light);
+            transform: translateX(4px);
+        }
+
+        .nav-item:hover::before,
+        .nav-item.active::before {
+            transform: translateY(-50%) scaleY(1);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            font-weight: 700;
+            box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 24px;
+        }
+
+        /* Theme toggle */
+        .theme-toggle-container {
+            display: flex;
+            background-color: var(--bg-app);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .theme-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover {
+            color: var(--accent);
+        }
+
+        .theme-btn.active {
+            background: var(--accent-gradient);
+            color: #1a1408;
+            box-shadow: 0 4px 14px var(--gold-glow);
+        }
+
+        /* ============ MAIN ============ */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 40px;
+            gap: 32px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: color-mix(in oklab, var(--accent) 35%, transparent);
+            border-radius: 4px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeUp .7s ease both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .header-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -0.6px;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* Quick actions */
+        .quick-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .btn::after {
+            /* ripple shimmer */
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(255, 255, 255, .35), transparent 40%);
+            opacity: 0;
+            transition: opacity .5s ease;
+            pointer-events: none;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: #1a1408;
+            box-shadow: 0 6px 20px var(--gold-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--gold-glow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #c43030);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(255, 87, 87, 0.35);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 87, 87, 0.5);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px color-mix(in oklab, var(--accent) 20%, transparent);
+        }
+
+        /* ============ METRIC GRID ============ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .metric-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            animation: fadeUp .7s ease both;
+        }
+
+        .metric-card:nth-child(1) {
+            animation-delay: .05s;
+        }
+
+        .metric-card:nth-child(2) {
+            animation-delay: .12s;
+        }
+
+        .metric-card:nth-child(3) {
+            animation-delay: .18s;
+        }
+
+        .metric-card:nth-child(4) {
+            animation-delay: .24s;
+        }
+
+        .metric-card::before {
+            /* top gold accent line */
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .5s ease;
+        }
+
+        .metric-card::after {
+            /* hover spotlight */
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--accent) 14%, transparent), transparent 50%);
+            opacity: 0;
+            transition: opacity .35s ease;
+            pointer-events: none;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent);
+            border-color: color-mix(in oklab, var(--accent) 35%, var(--border-color));
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric-card:hover::after {
+            opacity: 1;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .metric-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-light) !important;
+            color: var(--accent) !important;
+            box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+            transition: transform .3s ease;
+        }
+
+        .metric-card:hover .metric-icon {
+            transform: rotate(-8deg) scale(1.08);
+        }
+
+        .metric-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            position: relative;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            margin-right: 8px;
+            align-self: center;
+            box-shadow: 0 0 8px currentColor;
+            animation: dotPulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .4;
+            }
+        }
+
+        .status-badge.idle {
+            background-color: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .status-badge.navigating {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-badge.paused {
+            background-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .status-badge.emergency-stop {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* ============ BATTERY (retinted to gold/amber semantic) ============ */
+        .battery-display-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .battery-cell-3d-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 58px;
+            height: 130px;
+            flex-shrink: 0;
+            perspective: 200px;
+        }
+
+        .battery-cell-cap {
+            width: 18px;
+            height: 6px;
+            background: linear-gradient(90deg, #4a3a18 0%, #c9a25a 50%, #2a1f08 100%);
+            border-radius: 3px 3px 0 0;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            z-index: 5;
+        }
+
+        .battery-cell-glass {
+            position: relative;
+            width: 100%;
+            flex-grow: 1;
+            background: rgba(255, 230, 170, 0.04);
+            border: 2px solid color-mix(in oklab, var(--accent) 25%, transparent);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(3px);
+            display: flex;
+            flex-direction: column-reverse;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="light"] .battery-cell-glass {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .battery-cell-fill {
+            width: 100%;
+            height: 0%;
+            border-radius: 0 0 10px 10px;
+            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+        }
+
+        .battery-cell-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent);
+            border-radius: 6px 6px 0 0;
+            filter: blur(0.5px);
+        }
+
+        .battery-cell-sheen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 230, 170, 0.22) 15%,
+                    rgba(255, 255, 255, 0) 35%,
+                    rgba(255, 255, 255, 0) 75%,
+                    rgba(255, 230, 170, 0.12) 85%,
+                    rgba(255, 255, 255, 0) 100%);
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .battery-cell-base {
+            width: 100%;
+            height: 7px;
+            background: linear-gradient(90deg, #3a2a10 0%, #c9a25a 50%, #1a1208 100%);
+            border-radius: 0 0 5px 5px;
+            box-shadow: inset 0 -1px 1px rgba(255, 255, 255, 0.3);
+            margin-top: 1px;
+            z-index: 5;
+        }
+
+        /* Semantic battery fills — user-specified 4-tier palette */
+        .fill-optimal {
+            background: linear-gradient(180deg, #9CCC65 0%, #558B2F 100%) !important;
+            box-shadow: 0 0 18px rgba(124, 179, 66, 0.55);
+        }
+
+        .fill-moderate {
+            background: linear-gradient(180deg, #FFD580 0%, #B8860B 100%) !important;
+            box-shadow: 0 0 15px rgba(222, 176, 78, 0.55);
+        }
+
+        .fill-low {
+            background: linear-gradient(180deg, #FFA726 0%, #E65100 100%) !important;
+            box-shadow: 0 0 16px rgba(255, 143, 0, 0.6);
+        }
+
+        .fill-critical {
+            background: linear-gradient(180deg, #EF5350 0%, #7F0000 100%) !important;
+            box-shadow: 0 0 22px rgba(211, 47, 47, 0.8);
+            animation: fill-pulse-anim 0.8s infinite alternate;
+        }
+
+        .battery-optimal {
+            color: #7CB342 !important;
+            text-shadow: 0 0 10px rgba(124, 179, 66, 0.45);
+        }
+
+        .battery-moderate {
+            color: #DEB04E !important;
+        }
+
+        .battery-low {
+            color: #FF8F00 !important;
+        }
+
+        .battery-critical {
+            color: #D32F2F !important;
+            animation: battery-flash-anim 0.8s infinite alternate;
+        }
+
+        @keyframes battery-flash-anim {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .badge-critical-flash {
+            animation: badge-flash-anim 0.8s infinite alternate;
+        }
+
+        @keyframes badge-flash-anim {
+            0% {
+                background-color: rgba(211, 47, 47, 0.15);
+                box-shadow: 0 0 0 0px rgba(211, 47, 47, 0);
+            }
+
+            50% {
+                background-color: rgba(211, 47, 47, 0.4);
+                box-shadow: 0 0 12px 3px rgba(211, 47, 47, 0.4);
+            }
+
+            100% {
+                background-color: rgba(211, 47, 47, 0.15);
+                box-shadow: 0 0 0 0px rgba(211, 47, 47, 0);
+            }
+        }
+
+        .fill-critical-pulse {
+            animation: fill-pulse-anim 0.8s infinite alternate;
+        }
+
+        @keyframes fill-pulse-anim {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* ============ PANELS ============ */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            min-height: 450px;
+        }
+
+        .panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeUp .8s ease both;
+            animation-delay: .3s;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: .55;
+        }
+
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title>span:first-child {
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .panel-title>span:first-child::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 18px;
+            border-radius: 2px;
+            background: var(--accent-gradient);
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        /* Map */
+        .map-wrapper {
+            flex-grow: 1;
+            position: relative;
+            background-color: var(--bg-app);
+            border-radius: var(--radius-md);
+            border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border-color));
+            overflow: hidden;
+            box-shadow: inset 0 0 60px color-mix(in oklab, var(--accent) 10%, transparent);
+        }
+
+        #dashboard-view-content .map-wrapper::after {
+            /* scanline — dashboard radar only (not control panel map) */
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            box-shadow: 0 0 10px var(--gold-glow);
+            opacity: .7;
+            animation: scan 4.5s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 0;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Waypoints */
+        .waypoint-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .waypoint-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .waypoint-list::-webkit-scrollbar-thumb {
+            background: color-mix(in oklab, var(--accent) 35%, transparent);
+            border-radius: 3px;
+        }
+
+        .waypoint-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-app);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waypoint-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent-gradient);
+            transform: scaleY(0);
+            transform-origin: center;
+            transition: transform .3s ease;
+        }
+
+        .waypoint-card:hover {
+            border-color: var(--accent);
+            transform: translateX(6px);
+            box-shadow: -4px 0 18px color-mix(in oklab, var(--accent) 25%, transparent);
+        }
+
+        .waypoint-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .wp-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .wp-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .wp-coords {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: .3px;
+        }
+
+        .action-cluster {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-sm.btn-primary {
+            background: var(--accent-gradient);
+            color: #1a1408;
+        }
+
+        .btn-sm.btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--gold-glow);
+        }
+
+        .btn-sm.btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-sm.btn-secondary:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Hardware grid */
+        .hardware-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .hw-item {
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hw-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px color-mix(in oklab, var(--accent) 18%, transparent);
+        }
+
+        .hw-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hw-status {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: .5px;
+        }
+
+        .hw-status.ok {
+            color: var(--success);
+            text-shadow: 0 0 10px color-mix(in oklab, var(--success) 50%, transparent);
+        }
+
+        .hw-status.warn {
+            color: var(--warning);
+            text-shadow: 0 0 10px color-mix(in oklab, var(--warning) 50%, transparent);
+        }
+
+        .hw-status.error {
+            color: var(--danger);
+            text-shadow: 0 0 10px color-mix(in oklab, var(--danger) 60%, transparent);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(7, 6, 10, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background-color: var(--bg-card);
+            border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--border-color));
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: var(--shadow-md), 0 0 80px var(--gold-glow);
+            text-align: center;
+            transform: scale(0.85) translateY(10px);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .modal-overlay.open .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, var(--danger-light), transparent);
+            color: var(--danger);
+            border: 2px solid color-mix(in oklab, var(--danger) 50%, transparent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin: 0 auto 22px;
+            animation: warnPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes warnPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 107, 107, .45);
+            }
+
+            50% {
+                box-shadow: 0 0 0 14px rgba(255, 107, 107, 0);
+            }
+        }
+
+        .modal-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .modal-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.55;
+            margin-bottom: 28px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+        }
+
+        .icon-vector {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Connection status with live dot */
+        #connectionStatus {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: color-mix(in oklab, var(--success) 14%, transparent);
+            font-size: 13px;
+        }
+
+        #connectionStatus::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 10px currentColor;
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+
+        @media (max-width: 1100px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .panel-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                padding: 24px;
+            }
+
+            .quick-actions {
+                flex-wrap: wrap;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============ MAP EDITOR OVERLAY ============ */
+        .map-editor-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            align-items: stretch;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+
+        .map-editor-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .map-editor-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(7, 6, 10, 0.72);
+            backdrop-filter: blur(6px);
+        }
+
+        .map-editor-panel {
+            position: relative;
+            z-index: 1;
+            width: 680px;
+            max-width: 96vw;
+            background: var(--bg-card);
+            border-right: 1px solid color-mix(in oklab, var(--accent) 30%, var(--border-color));
+            display: flex;
+            flex-direction: column;
+            box-shadow: 8px 0 60px rgba(0, 0, 0, 0.6), inset -1px 0 0 color-mix(in oklab, var(--accent) 20%, transparent);
+            transform: translateX(-40px);
+            transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .map-editor-overlay.open .map-editor-panel {
+            transform: translateX(0);
+        }
+
+        .map-editor-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .map-editor-header {
+            padding: 28px 32px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .map-editor-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.4px;
+        }
+
+        .map-editor-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+
+        .map-editor-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-app);
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .map-editor-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .map-editor-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .map-editor-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .map-editor-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .map-editor-body::-webkit-scrollbar-thumb {
+            background: color-mix(in oklab, var(--accent) 30%, transparent);
+            border-radius: 3px;
+        }
+
+        /* Add-waypoint form */
+        .wp-add-form {
+            background: var(--bg-app);
+            border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--border-color));
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 90px 90px auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .wp-add-form label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .wp-input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            padding: 10px 12px;
+            outline: none;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .wp-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+        }
+
+        /* Waypoint table */
+        .wp-table-wrap {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow-y: auto;
+            max-height: 280px;
+        }
+
+        .wp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .wp-table thead tr {
+            background: var(--bg-app);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .wp-table th {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-app);
+            z-index: 2;
+        }
+
+        .wp-table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .wp-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .wp-table tbody tr:hover {
+            background: color-mix(in oklab, var(--accent) 6%, transparent);
+        }
+
+        .wp-table td {
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .wp-table td:first-child {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 600;
+        }
+
+        .wp-table td.coord {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .wp-table td.actions {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .wp-table-edit-input {
+            background: var(--bg-app);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            padding: 5px 8px;
+            width: 72px;
+            outline: none;
+        }
+
+        .wp-action-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .wp-btn-edit {
+            background: color-mix(in oklab, var(--accent) 18%, transparent);
+            color: var(--accent);
+            border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+        }
+
+        .wp-btn-edit:hover {
+            background: color-mix(in oklab, var(--accent) 28%, transparent);
+        }
+
+        .wp-btn-save {
+            background: var(--accent-gradient);
+            color: #1a1408;
+            box-shadow: 0 2px 10px var(--gold-glow);
+        }
+
+        .wp-btn-save:hover {
+            transform: translateY(-1px);
+        }
+
+        .wp-btn-del {
+            background: color-mix(in oklab, var(--danger) 16%, transparent);
+            color: var(--danger);
+            border: 1px solid color-mix(in oklab, var(--danger) 30%, transparent);
+        }
+
+        .wp-btn-del:hover {
+            background: color-mix(in oklab, var(--danger) 28%, transparent);
+        }
+
+        .wp-btn-add {
+            background: var(--accent-gradient);
+            color: #1a1408;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px 18px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            box-shadow: 0 4px 16px var(--gold-glow);
+            align-self: flex-end;
+        }
+
+        .wp-btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--gold-glow);
+        }
+
+        .map-editor-footer {
+            padding: 18px 32px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            background: var(--bg-app);
+        }
+
+        .map-editor-footer span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* ============ ADMIN PANEL ============ */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            min-height: 500px;
+        }
+
+        .admin-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 100px;
+            gap: 12px;
+        }
+
+        .admin-form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .table-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .table-tab {
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-app);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .table-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .table-tab.active {
+            background: var(--accent-gradient);
+            color: #1a1408;
+            border-color: transparent;
+            box-shadow: 0 4px 14px var(--gold-glow);
+        }
+
+        .avail-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        .avail-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .avail-slider {
+            position: absolute;
+            inset: 0;
+            background: color-mix(in oklab, var(--danger) 30%, var(--bg-app));
+            border-radius: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .avail-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: #fff;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .avail-toggle input:checked+.avail-slider {
+            background: color-mix(in oklab, var(--success) 40%, var(--bg-app));
+            border-color: var(--success);
+        }
+
+        .avail-toggle input:checked+.avail-slider::before {
+            transform: translateX(20px);
+        }
+
+        .order-card {
+            background: var(--bg-app);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .order-card.pending {
+            border-left: 3px solid var(--warning);
+        }
+
+        .order-card.confirmed {
+            border-left: 3px solid var(--success);
+        }
+
+        .order-card.cancelled {
+            border-left: 3px solid var(--danger);
+            opacity: 0.65;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .order-status-badge {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .order-status-badge.pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .order-status-badge.confirmed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .order-status-badge.cancelled {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .order-items-list {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .order-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 14px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .bill-summary {
+            background: color-mix(in oklab, var(--accent) 10%, var(--bg-app));
+            border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--border-color));
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bill-total {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--accent);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .orders-scroll {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .menu-desc-cell {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            font-size: 12px;
+            color: var(--text-secondary);
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .admin-empty {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .argo-comm-panel {
+            grid-column: 1 / -1;
+        }
+
+        .argo-comm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .argo-status-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .argo-status-pill {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-app);
+            color: var(--text-secondary);
+        }
+
+        .argo-status-pill.on {
+            background: var(--success-light);
+            color: var(--success);
+            border-color: color-mix(in oklab, var(--success) 40%, var(--border-color));
+        }
+
+        .argo-status-pill.off {
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: color-mix(in oklab, var(--danger) 40%, var(--border-color));
+        }
+
+        .argo-status-pill.warn {
+            background: var(--warning-light);
+            color: var(--warning);
+            border-color: color-mix(in oklab, var(--warning) 40%, var(--border-color));
+        }
+
+        .argo-comm-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .argo-chat-log {
+            background: var(--bg-app);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            min-height: 220px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .argo-chat-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .argo-chat-bubble.guest {
+            align-self: flex-end;
+            background: color-mix(in oklab, var(--accent) 18%, var(--bg-card));
+            border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--border-color));
+        }
+
+        .argo-chat-bubble.argo {
+            align-self: flex-start;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .argo-chat-meta {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .argo-voice-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 28px 20px;
+            margin-bottom: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: radial-gradient(circle at center, color-mix(in oklab, var(--accent) 8%, var(--bg-app)), var(--bg-app));
+        }
+
+        .argo-voice-orb {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .argo-voice-orb.listening {
+            border-color: var(--success);
+            box-shadow: 0 0 0 0 var(--gold-glow), 0 0 30px color-mix(in oklab, var(--success) 35%, transparent);
+            animation: voicePulse 1.6s ease-in-out infinite;
+        }
+
+        .argo-voice-orb.speaking {
+            border-color: var(--accent);
+            animation: voicePulse 0.9s ease-in-out infinite;
+        }
+
+        .argo-voice-orb.processing {
+            border-color: var(--warning);
+        }
+
+        @keyframes voicePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        .argo-voice-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .argo-voice-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 420px;
+            line-height: 1.5;
+        }
+
+        .argo-alerts {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .argo-alert-card {
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid color-mix(in oklab, var(--warning) 45%, var(--border-color));
+            background: var(--warning-light);
+            color: var(--warning);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1100px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">a</div>
+            <div class="brand-name">atsn ai</div>
+        </div>
+        <nav class="nav-menu">
+            <a class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')" style="cursor:pointer;">
+                <svg class="icon-vector" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </a>
+            <a class="nav-item" id="nav-control" onclick="showSection('control')" style="cursor:pointer;">
+                <svg class="icon-vector" viewBox="0 0 24 24">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                    <line x1="9" y1="3" x2="9" y2="18"></line>
+                    <line x1="15" y1="6" x2="15" y2="21"></line>
+                </svg>
+                control panel
+            </a>
+            <a class="nav-item" id="nav-admin" onclick="showSection('admin')" style="cursor:pointer;">
+                <svg class="icon-vector" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                admin panel
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="theme-toggle-container">
+                <button id="theme-light-btn" class="theme-btn" onclick="setTheme('light')">
+                    <svg class="icon-vector" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="18.36" x2="5.64" y2="16.96"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    Light
+                </button>
+                <button id="theme-dark-btn" class="theme-btn active" onclick="setTheme('dark')">
+                    <svg class="icon-vector" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    Dark
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header>
+            <div class="header-title">
+                <h1>Argo Mini</h1>
+                <p>Advanced Robotics Analytics Dashboard & Control Hub</p>
+            </div>
+            <div class="quick-actions">
+                <button class="btn btn-secondary" onclick="sendCommand('pause')">
+                    <svg class="icon-vector" viewBox="0 0 24 24">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                    Pause
+                </button>
+                <button class="btn btn-secondary" onclick="sendCommand('resume')">
+                    <svg class="icon-vector" viewBox="0 0 24 24">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Resume
+                </button>
+                <button class="btn btn-danger" onclick="openEmergencyModal()">
+                    <svg class="icon-vector" viewBox="0 0 24 24">
+                        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2">
+                        </polygon>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    TERMINATE
+                </button>
+            </div>
+        </header>
+
+        <div id="dashboard-view-content">
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Current State</span>
+                        <div class="metric-icon">
+                            <svg class="icon-vector" viewBox="0 0 24 24">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="robotStatus" class="status-badge idle">Idle</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Current Position</span>
+                        <div class="metric-icon">
+                            <svg class="icon-vector" viewBox="0 0 24 24">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="currentPosition" class="metric-value">Base Station</div>
+                    <div id="currentCoordinates"
+                        style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                        X: 0.00, Y: 0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header" style="margin-bottom: 4px;">
+                        <span class="metric-title">Battery Status</span>
+                        <div class="metric-icon">
+                            <svg class="icon-vector" viewBox="0 0 24 24">
+                                <rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect>
+                                <line x1="22" y1="11" x2="22" y2="13"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="battery-display-container">
+                        <div class="battery-cell-3d-wrapper">
+                            <div class="battery-cell-cap"></div>
+                            <div class="battery-cell-glass" id="batteryCellGlass">
+                                <div id="batteryCellFill" class="battery-cell-fill"></div>
+                                <div class="battery-cell-sheen"></div>
+                            </div>
+                            <div class="battery-cell-base"></div>
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div id="batteryLevel" class="metric-value" style="font-size: 32px; line-height: 1;">--%
+                                </div>
+                                <span id="batteryStatusBadge" class="status-badge"
+                                    style="align-self: flex-start; padding: 4px 10px; font-size: 10px; font-weight: 700; border-radius: 12px; transition: var(--transition); text-transform: uppercase;">--</span>
+                            </div>
+                            <div id="bmsDetails"
+                                style="display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--text-secondary); border-top: 1px solid var(--border-color); padding-top: 8px; font-family: 'JetBrains Mono', monospace;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Voltage:</span>
+                                    <span id="bmsVoltage" style="font-weight: 600; color: var(--accent);">-- V</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Current:</span>
+                                    <span id="bmsCurrent" style="font-weight: 600; color: var(--accent);">-- A</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Capacity:</span>
+                                    <span id="bmsCapacity"
+                                        style="font-weight: 600; color: var(--accent); white-space: nowrap;">-- / --
+                                        Ah</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Temp:</span>
+                                    <span id="bmsTemp"
+                                        style="font-weight: 600; color: var(--accent); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px;">--
+                                        °C</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Remaining Distance</span>
+                        <div class="metric-icon">
+                            <svg class="icon-vector" viewBox="0 0 24 24">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="distanceToGoal" class="metric-value">0.00 m</div>
+                </div>
+            </section>
+
+            <section class="panel-grid">
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Real-Time 360° Surroundings </span>
+                        <span id="connectionStatus" style="font-weight:700; color:var(--success);">Connected</span>
+                    </div>
+                    <div class="map-wrapper">
+                        <canvas id="mapCanvas"></canvas>
+                    </div>
+                    <div class="hardware-grid">
+                        <div class="hw-item">
+                            <span class="hw-label">Drive Actuators</span>
+                            <span id="motorStatus" class="hw-status ok">OK</span>
+                        </div>
+                        <div class="hw-item">
+                            <span class="hw-label">LiDAR Perception</span>
+                            <span id="lidarStatus" class="hw-status ok">ACTIVE</span>
+                        </div>
+                        <div class="hw-item">
+                            <span class="hw-label">Inertial Navigation (IMU)</span>
+                            <span id="imuStatus" class="hw-status ok">CALIBRATED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Navigation Registry</span>
+                    </div>
+                    <div class="waypoint-list">
+                        <div class="waypoint-card">
+                            <div class="wp-details">
+                                <span class="wp-name">Base Station (Home)</span>
+                                <span class="wp-coords">X: 0.00, Y: 0.00</span>
+                            </div>
+                            <div class="action-cluster">
+                                <button class="btn-sm btn-primary"
+                                    onclick="sendCommand('navigate', {waypoint: 0, mode: 'shift'})">Go</button>
+                            </div>
+                        </div>
+                        <div class="waypoint-card">
+                            <div class="wp-details">
+                                <span class="wp-name">Table 1</span>
+                                <span class="wp-coords">X: -1.50, Y: 1.50</span>
+                            </div>
+                            <div class="action-cluster">
+                                <button class="btn-sm btn-secondary"
+                                    onclick="sendCommand('navigate', {waypoint: 1, mode: 'queue'})">Queue</button>
+                                <button class="btn-sm btn-primary"
+                                    onclick="sendCommand('navigate', {waypoint: 1, mode: 'shift'})">Go</button>
+                            </div>
+                        </div>
+                        <div class="waypoint-card">
+                            <div class="wp-details">
+                                <span class="wp-name">Table 2</span>
+                                <span class="wp-coords">X: 1.50, Y: 1.50</span>
+                            </div>
+                            <div class="action-cluster">
+                                <button class="btn-sm btn-secondary"
+                                    onclick="sendCommand('navigate', {waypoint: 2, mode: 'queue'})">Queue</button>
+                                <button class="btn-sm btn-primary"
+                                    onclick="sendCommand('navigate', {waypoint: 2, mode: 'shift'})">Go</button>
+                            </div>
+                        </div>
+                        <div class="waypoint-card">
+                            <div class="wp-details">
+                                <span class="wp-name">Table 3</span>
+                                <span class="wp-coords">X: -1.50, Y: -1.50</span>
+                            </div>
+                            <div class="action-cluster">
+                                <button class="btn-sm btn-secondary"
+                                    onclick="sendCommand('navigate', {waypoint: 3, mode: 'queue'})">Queue</button>
+                                <button class="btn-sm btn-primary"
+                                    onclick="sendCommand('navigate', {waypoint: 3, mode: 'shift'})">Go</button>
+                            </div>
+                        </div>
+                        <div class="waypoint-card">
+                            <div class="wp-details">
+                                <span class="wp-name">Table 4</span>
+                                <span class="wp-coords">X: 1.50, Y: -1.50</span>
+                            </div>
+                            <div class="action-cluster">
+                                <button class="btn-sm btn-secondary"
+                                    onclick="sendCommand('navigate', {waypoint: 4, mode: 'queue'})">Queue</button>
+                                <button class="btn-sm btn-primary"
+                                    onclick="sendCommand('navigate', {waypoint: 4, mode: 'shift'})">Go</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border-color); padding-top:16px;">
+                        <div
+                            style="font-size:11px; color:var(--text-secondary); margin-bottom:6px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;">
+                            Current Route</div>
+                        <div id="targetDestination"
+                            style="font-size:18px; font-weight:800; color:var(--accent); text-shadow: 0 0 12px var(--gold-glow);">
+                            Base Station</div>
+                    </div>
+                </div>
+            </section>
+        </div><!-- End #dashboard-view-content -->
+
+        <div id="control-panel-view-content" style="display: none;">
+            <section class="panel-grid">
+                <!-- Left column: Map Panel -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Tactical Navigation Map</span>
+                        <span
+                            style="font-size: 11px; color: var(--text-secondary); text-transform: none; font-weight: normal; letter-spacing: 0;">
+                            Click on map to capture target coordinates
+                        </span>
+                    </div>
+                    <div class="map-wrapper" style="min-height: 400px; cursor: crosshair;">
+                        <canvas id="controlMapCanvas"></canvas>
+                    </div>
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:16px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-secondary);">
+                        <div>
+                            <span>Pose: </span>
+                            <strong id="livePoseLabel" style="color:var(--accent);">X: 0.00, Y: 0.00</strong>
+                        </div>
+                        <div>
+                            <span>Heading target: </span>
+                            <strong id="ctrlTargetDestination" style="color:var(--accent);">Base Station</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: Waypoint Editor Panel -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Waypoint Planner</span>
+                    </div>
+
+                    <!-- Add new waypoint form -->
+                    <div class="wp-add-form"
+                        style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                            <label
+                                style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">Table
+                                Name
+                                <input class="wp-input" id="wpNewName" placeholder="e.g. Table 5" />
+                            </label>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <label
+                                style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">X
+                                coordinate (m)
+                                <input class="wp-input" id="wpNewX" type="number" step="0.01" placeholder="0.00" />
+                            </label>
+                            <label
+                                style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">Y
+                                coordinate (m)
+                                <input class="wp-input" id="wpNewY" type="number" step="0.01" placeholder="0.00" />
+                            </label>
+                        </div>
+                        <div
+                            style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:4px;">
+                            <button class="wp-action-btn wp-btn-edit"
+                                style="font-size: 11px; padding: 10px 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 6px;"
+                                onclick="useCurrentRobotPose()">
+                                <svg class="icon-vector" style="width: 12px; height: 12px;" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                </svg>
+                                Capture Robot Pose
+                            </button>
+                            <button class="wp-btn-add" onclick="addWaypoint()">+ Add Waypoint</button>
+                        </div>
+                    </div>
+
+                    <!-- Waypoint table -->
+                    <div class="wp-table-wrap">
+                        <table class="wp-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>X (m)</th>
+                                    <th>Y (m)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wpTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Footer with Save & Apply -->
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:16px;">
+                        <span id="wpCountLabel" style="font-size:12px; color:var(--text-secondary);">0 waypoints</span>
+                        <button class="wp-btn-add" onclick="applyWaypointsToPanel()">&#10003; Save & Apply</button>
+                    </div>
+                </div>
+            </section>
+        </div><!-- End #control-panel-view-content -->
+
+        <div id="admin-panel-view-content" style="display: none;">
+            <section class="admin-grid">
+                <!-- Menu Management -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Restaurant Menu</span>
+                        <span id="menuCountLabel" style="font-size: 12px; color: var(--text-secondary); text-transform: none; font-weight: normal; letter-spacing: 0;">0 items</span>
+                    </div>
+
+                    <div class="wp-add-form"
+                        style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 14px;">
+                        <div class="admin-form-grid">
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">
+                                Item Name
+                                <input class="wp-input" id="menuNewName" placeholder="e.g. water" />
+                            </label>
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">
+                                Price ($)
+                                <input class="wp-input" id="menuNewPrice" type="number" step="0.01" min="0" placeholder="0.00" />
+                            </label>
+                            <label class="full-width" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; gap: 6px;">
+                                Description
+                                <input class="wp-input" id="menuNewDesc" placeholder="Brief description of the dish" />
+                            </label>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button class="wp-btn-add" onclick="addMenuItem()">+ Add Menu Item</button>
+                        </div>
+                    </div>
+
+                    <div class="wp-table-wrap" style="max-height: 360px;">
+                        <table class="wp-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Description</th>
+                                    <th>Available</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menuTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Table Orders -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <span>Table Orders</span>
+                        <button class="btn-sm btn-secondary" onclick="resetCurrentTable()" style="font-size: 11px;">
+                            + New Customer
+                        </button>
+                    </div>
+
+                    <div class="table-tabs" id="tableTabs"></div>
+
+                    <div class="bill-summary">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.2px;">Session Bill Total</span>
+                            <span id="tableSessionLabel" style="font-size: 11px; color: var(--text-secondary);">Session #1</span>
+                        </div>
+                        <div class="bill-total" id="tableBillTotal">$0.00</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            <span id="tableOrderCount">0 orders</span> &middot; Confirmed items only
+                        </div>
+                    </div>
+
+                    <div class="orders-scroll" id="ordersList">
+                        <div class="admin-empty">No orders for this table yet.</div>
+                    </div>
+                </div>
+
+                <!-- Argo NLP Communication -->
+                <div class="panel argo-comm-panel">
+                    <div class="argo-comm-header">
+                        <div>
+                            <div class="panel-title" style="margin-bottom: 8px;">
+                                <span>Argo Voice Assistant</span>
+                            </div>
+                            <div class="argo-status-row">
+                                <span class="argo-status-pill off" id="nlpRunningPill">Agent Stopped</span>
+                                <span class="argo-status-pill off" id="nlpSessionPill">Session Idle</span>
+                                <span class="argo-status-pill" id="nlpWaypointPill">At docking_station</span>
+                            </div>
+                        </div>
+                        <div class="argo-comm-actions">
+                            <button class="wp-btn-add" id="nlpStartBtn" onclick="startArgoCommunication()">Start Voice Communication</button>
+                            <button class="btn-sm btn-secondary" id="nlpStopBtn" onclick="stopArgoCommunication()" disabled>Stop</button>
+                            <button class="btn-sm btn-secondary" id="nlpWakeBtn" onclick="toggleArgoWake()" disabled>💤 Wake Up Argo</button>
+                        </div>
+                    </div>
+
+                    <div id="nlpErrorBanner" style="display:none; margin-bottom: 12px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid color-mix(in oklab, var(--danger) 45%, var(--border-color)); background: var(--danger-light); color: var(--danger); font-size: 12px; white-space: pre-wrap;"></div>
+
+                    <div class="argo-voice-stage">
+                        <div class="argo-voice-orb" id="argoVoiceOrb">🎙️</div>
+                        <div class="argo-voice-label" id="argoVoiceLabel">Voice offline</div>
+                        <div class="argo-voice-hint" id="argoVoiceHint">
+                            Press <strong>Start Communication</strong> to enable the robot microphone and speaker.
+                            Then say <strong>"Hey Argo"</strong> and talk naturally — Argo will listen and reply out loud.
+                        </div>
+                    </div>
+
+                    <div class="argo-chat-log" id="argoChatLog">
+                        <div class="admin-empty">Live transcript will appear here during voice conversations.</div>
+                    </div>
+
+                    <div class="argo-alerts" id="argoAlerts"></div>
+                </div>
+            </section>
+        </div><!-- End #admin-panel-view-content -->
+    </main>
+
+    <div id="emergencyModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon">⚠️</div>
+            <h2>Confirm Emergency Stop?</h2>
+            <p>This triggers the high priority emergency software override command payload sequence. All active motion
+                trajectories and navigation queues will immediately terminate.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeEmergencyModal()">Cancel Action</button>
+                <button class="btn btn-danger" onclick="confirmEmergencyStop()">EXECUTE STOP</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Jetson robot server address (override via localStorage if needed)
+        const JETSON_IP = "192.168.1.15";
+
+        let mapData = null;
+        let globalLidarPoints = [];
+
+        // Web Audio synthesized sound generator for premium interface feel
+        function playInteractionSound(frequency = 440, type = 'sine', volume = 0.1, duration = 0.1) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+                gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) { console.log("Audio not allowed yet."); }
+        }
+
+        // 3D vertical cylindrical battery rendering handler
+        function updateBatteryUI(percent) {
+            const batVal = Math.max(0, Math.min(100, Math.round(percent)));
+            document.getElementById('batteryLevel').textContent = batVal + '%';
+
+            const cellFillEl = document.getElementById('batteryCellFill');
+            if (cellFillEl) { cellFillEl.style.height = batVal + '%'; }
+
+            // 4-tier palette as specified: High=#7CB342, Medium=#DEB04E, Low=#FF8F00, Critical=#D32F2F
+            let status = "", color = "", bgLight = "", isCritical = false, fillClass = "", cssClass = "";
+            if (batVal >= 50) {
+                status = "High"; color = "#7CB342"; bgLight = "rgba(124,179,66,0.14)";
+                fillClass = "fill-optimal"; cssClass = "battery-optimal";
+            } else if (batVal >= 26) {
+                status = "Medium"; color = "#DEB04E"; bgLight = "rgba(222,176,78,0.15)";
+                fillClass = "fill-moderate"; cssClass = "battery-moderate";
+            } else if (batVal >= 16) {
+                status = "Low"; color = "#FF8F00"; bgLight = "rgba(255,143,0,0.14)";
+                fillClass = "fill-low"; cssClass = "battery-low";
+            } else {
+                status = "Critical"; color = "#D32F2F"; bgLight = "rgba(211,47,47,0.16)";
+                fillClass = "fill-critical"; isCritical = true; cssClass = "battery-critical";
+            }
+
+            const levelEl = document.getElementById('batteryLevel');
+            if (levelEl) levelEl.className = 'metric-value ' + cssClass;
+
+            const badgeEl = document.getElementById('batteryStatusBadge');
+            if (badgeEl) {
+                badgeEl.textContent = status;
+                badgeEl.style.color = color;
+                badgeEl.style.backgroundColor = bgLight;
+                if (isCritical) badgeEl.classList.add('badge-critical-flash');
+                else badgeEl.classList.remove('badge-critical-flash');
+            }
+
+            if (cellFillEl) cellFillEl.className = 'battery-cell-fill ' + fillClass;
+
+            const glassEl = document.getElementById('batteryCellGlass');
+            if (glassEl) {
+                if (isCritical) {
+                    glassEl.style.borderColor = 'rgba(211,47,47,0.45)';
+                    glassEl.style.boxShadow = 'inset 0 0 12px rgba(211,47,47,0.22), 0 0 18px rgba(211,47,47,0.3)';
+                } else {
+                    glassEl.style.borderColor = color + '55';
+                    glassEl.style.boxShadow = `inset 0 0 14px ${color}22, 0 8px 24px rgba(0,0,0,0.35)`;
+                }
+            }
+        }
+
+        function bmsNum(val) {
+            if (val === null || val === undefined || val === '') return null;
+            const n = Number(val);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function bmsPick(obj, ...keys) {
+            for (const key of keys) {
+                if (obj && obj[key] !== undefined && obj[key] !== null) return obj[key];
+            }
+            return undefined;
+        }
+
+        function normalizeBmsPayload(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+
+            const nested = raw.bms || raw.BMS || raw.battery || raw.batteryData || raw.battery_data;
+            const src = (nested && typeof nested === 'object') ? nested : raw;
+
+            let voltage = bmsNum(bmsPick(src, 'voltage', 'voltage_v', 'battery_voltage', 'batteryVoltage', 'pack_voltage', 'packVoltage', 'total_voltage', 'totalVoltage'));
+            if (voltage !== null && voltage > 200) voltage /= 1000;
+
+            let current = bmsNum(bmsPick(src, 'current', 'current_a', 'battery_current', 'batteryCurrent', 'pack_current', 'packCurrent'));
+            if (current !== null && Math.abs(current) > 500) current /= 1000;
+
+            let remaining = bmsNum(bmsPick(src, 'remaining_capacity', 'remainingCapacity', 'remain_capacity', 'remainCapacity', 'remaining_ah', 'remainingAh', 'remaining'));
+            let full = bmsNum(bmsPick(src, 'full_capacity', 'fullCapacity', 'design_capacity', 'designCapacity', 'full_ah', 'fullAh', 'nominal_capacity', 'nominalCapacity'));
+            if (remaining !== null && remaining > 500) remaining /= 1000;
+            if (full !== null && full > 500) full /= 1000;
+
+            let percent = bmsNum(bmsPick(src, 'battery_percent', 'batteryPercent', 'soc', 'SOC', 'percent', 'charge', 'battery_level', 'batteryLevel', 'state_of_charge', 'stateOfCharge'));
+            if (percent !== null && percent > 0 && percent <= 1) percent *= 100;
+
+            const tempRaw = bmsPick(src, 'temperatures', 'temps', 'cell_temperatures', 'cellTemperatures', 'temperature', 'temp', 'avg_temp', 'avgTemp', 'average_temperature', 'averageTemperature');
+            let temperatures = [];
+            if (Array.isArray(tempRaw)) {
+                temperatures = tempRaw.map(t => bmsNum(t)).filter(t => t !== null);
+            } else if (tempRaw && typeof tempRaw === 'object') {
+                temperatures = Object.values(tempRaw).map(t => bmsNum(t)).filter(t => t !== null);
+            } else {
+                const singleTemp = bmsNum(tempRaw);
+                if (singleTemp !== null) temperatures = [singleTemp];
+            }
+
+            if (percent === null && voltage === null && current === null && remaining === null && full === null && temperatures.length === 0) {
+                return null;
+            }
+
+            return { percent, voltage, current, remaining, full, temperatures };
+        }
+
+        function applyBmsData(raw) {
+            const bms = normalizeBmsPayload(raw);
+            if (!bms) return false;
+
+            if (bms.percent !== null) {
+                updateBatteryUI(bms.percent);
+            }
+
+            const voltageEl = document.getElementById('bmsVoltage');
+            if (voltageEl && bms.voltage !== null) {
+                voltageEl.textContent = bms.voltage.toFixed(2) + ' V';
+            }
+
+            const currentEl = document.getElementById('bmsCurrent');
+            if (currentEl && bms.current !== null) {
+                currentEl.textContent = bms.current.toFixed(2) + ' A';
+            }
+
+            const capacityEl = document.getElementById('bmsCapacity');
+            if (capacityEl) {
+                if (bms.remaining !== null && bms.full !== null) {
+                    capacityEl.textContent = bms.remaining.toFixed(2) + ' / ' + bms.full.toFixed(2) + ' Ah';
+                } else if (bms.remaining !== null) {
+                    capacityEl.textContent = bms.remaining.toFixed(2) + ' Ah';
+                } else if (bms.full !== null) {
+                    capacityEl.textContent = '-- / ' + bms.full.toFixed(2) + ' Ah';
+                }
+            }
+
+            const tempEl = document.getElementById('bmsTemp');
+            if (tempEl && bms.temperatures.length > 0) {
+                tempEl.textContent = bms.temperatures.map(t => t.toFixed(1) + '°C').join(', ');
+                tempEl.title = tempEl.textContent;
+            }
+
+            return true;
+        }
+
+        async function fetchBmsData() {
+            const endpoints = [
+                `http://${JETSON_IP}:8080/api/bms`
+            ];
+
+            const merged = { percent: null, voltage: null, current: null, remaining: null, full: null, temperatures: [] };
+
+            for (const url of endpoints) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) continue;
+                    const bms = normalizeBmsPayload(await response.json());
+                    if (!bms) continue;
+
+                    if (bms.percent !== null) merged.percent = bms.percent;
+                    if (bms.voltage !== null) merged.voltage = bms.voltage;
+                    if (bms.current !== null) merged.current = bms.current;
+                    if (bms.remaining !== null) merged.remaining = bms.remaining;
+                    if (bms.full !== null) merged.full = bms.full;
+                    if (bms.temperatures.length > 0) merged.temperatures = bms.temperatures;
+                } catch (e) {
+                    // Try next BMS source
+                }
+            }
+
+            if (merged.percent === null && merged.voltage === null && merged.current === null &&
+                merged.remaining === null && merged.full === null && merged.temperatures.length === 0) {
+                return false;
+            }
+
+            if (merged.percent !== null) updateBatteryUI(merged.percent);
+
+            const voltageEl = document.getElementById('bmsVoltage');
+            if (voltageEl && merged.voltage !== null) {
+                voltageEl.textContent = merged.voltage.toFixed(2) + ' V';
+            }
+
+            const currentEl = document.getElementById('bmsCurrent');
+            if (currentEl && merged.current !== null) {
+                currentEl.textContent = merged.current.toFixed(2) + ' A';
+            }
+
+            const capacityEl = document.getElementById('bmsCapacity');
+            if (capacityEl) {
+                if (merged.remaining !== null && merged.full !== null) {
+                    capacityEl.textContent = merged.remaining.toFixed(2) + ' / ' + merged.full.toFixed(2) + ' Ah';
+                } else if (merged.remaining !== null) {
+                    capacityEl.textContent = merged.remaining.toFixed(2) + ' Ah';
+                } else if (merged.full !== null) {
+                    capacityEl.textContent = '-- / ' + merged.full.toFixed(2) + ' Ah';
+                }
+            }
+
+            const tempEl = document.getElementById('bmsTemp');
+            if (tempEl && merged.temperatures.length > 0) {
+                tempEl.textContent = merged.temperatures.map(t => t.toFixed(1) + '°C').join(', ');
+                tempEl.title = tempEl.textContent;
+            }
+
+            return true;
+        }
+
+        async function updateState() {
+            try {
+                const response = await fetch(`http://${JETSON_IP}:8080/api/state`);
+                const data = await response.json();
+
+                // Capture incoming real LiDAR points array
+                if (data.lidarPoints) {
+                    globalLidarPoints = data.lidarPoints;
+                } else if (data.lidar_points) {
+                    globalLidarPoints = data.lidar_points;
+                }
+
+                // Capture incoming real OccupancyGrid map data
+                if (data.mapData) {
+                    mapData = data.mapData;
+                } else if (data.map_data) {
+                    mapData = data.map_data;
+                }
+
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').style.color = 'var(--success)';
+
+                // Support both snake_case and camelCase parameters from backend
+                const currentRobotStatus = data.robotStatus || data.robot_status || 'Idle';
+                document.getElementById('robotStatus').textContent = currentRobotStatus;
+                document.getElementById('robotStatus').className = 'status-badge ' + currentRobotStatus.toLowerCase().replace(' ', '-');
+
+                const targetText = data.targetDestination || data.target_destination || 'None';
+                const destEl = document.getElementById('targetDestination');
+                if (destEl) destEl.textContent = targetText;
+                const ctrlDestEl = document.getElementById('ctrlTargetDestination');
+                if (ctrlDestEl) ctrlDestEl.textContent = targetText;
+
+                // Extract current live robot pose coordinates
+                currentRobotX = (data.x !== undefined) ? data.x : (data.pose && data.pose.x !== undefined ? data.pose.x : (data.position && data.position.x !== undefined ? data.position.x : 0.0));
+                currentRobotY = (data.y !== undefined) ? data.y : (data.pose && data.pose.y !== undefined ? data.pose.y : (data.position && data.position.y !== undefined ? data.position.y : 0.0));
+
+                // Parse current robot heading/yaw orientation
+                if (data.yaw !== undefined) {
+                    currentRobotYaw = data.yaw;
+                } else if (data.theta !== undefined) {
+                    currentRobotYaw = data.theta;
+                } else if (data.pose && data.pose.yaw !== undefined) {
+                    currentRobotYaw = data.pose.yaw;
+                } else if (data.qz !== undefined && data.qw !== undefined) {
+                    currentRobotYaw = 2 * Math.atan2(data.qz, data.qw);
+                } else if (data.pose && data.pose.qz !== undefined && data.pose.qw !== undefined) {
+                    currentRobotYaw = 2 * Math.atan2(data.pose.qz, data.pose.qw);
+                }
+
+                // Update coordinates displays
+                const coordsEl = document.getElementById('currentCoordinates');
+                if (coordsEl) {
+                    coordsEl.textContent = `X: ${currentRobotX.toFixed(2)}, Y: ${currentRobotY.toFixed(2)}`;
+                }
+                const livePoseEl = document.getElementById('livePoseLabel');
+                if (livePoseEl) {
+                    livePoseEl.textContent = `X: ${currentRobotX.toFixed(2)}, Y: ${currentRobotY.toFixed(2)}`;
+                }
+
+                // Show position using nearest matching waypoint's title
+                const fallbackPos = data.currentPosition || data.current_position || 'Base Station';
+                const positionName = getClosestWaypointName(currentRobotX, currentRobotY, fallbackPos);
+                document.getElementById('currentPosition').textContent = positionName;
+
+                // Correctly read battery percentage variable from python backend layout matrix
+                let batVal = null;
+                if (data.battery_level !== undefined) {
+                    batVal = Math.round(data.battery_level);
+                } else if (data.batteryLevel !== undefined) {
+                    batVal = Math.round(data.batteryLevel);
+                }
+
+                if (batVal !== null) {
+                    updateBatteryUI(batVal);
+                }
+
+                // BMS fields may be embedded in the main state payload
+                applyBmsData(data);
+
+                const distance = data.distanceToGoal !== undefined ? data.distanceToGoal : (data.distance_to_goal !== undefined ? data.distance_to_goal : 0.0);
+                document.getElementById('distanceToGoal').textContent = distance.toFixed(2) + ' m';
+
+                updateComponentStatus('motorStatus', data.motorStatus || data.motor_status || 'OK');
+                updateComponentStatus('lidarStatus', data.lidarStatus || data.lidar_status || 'Active');
+                updateComponentStatus('imuStatus', data.imuStatus || data.imu_status || 'Calibrated');
+
+            } catch (error) {
+                console.error('Error fetching state from Jetson:', error);
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').style.color = 'var(--danger)';
+            }
+
+            // Secondary pass: dedicated BMS endpoint (local BLE reader or Jetson proxy)
+            await fetchBmsData();
+        }
+
+        async function sendCommand(command, args = {}) {
+            playInteractionSound(680, 'sine', 0.07, 0.08);
+            try {
+                const response = await fetch(`http://${JETSON_IP}:8080/api/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, args }),
+                });
+                const result = await response.json();
+                console.log('Command response from Jetson:', result);
+                updateState();
+            } catch (error) {
+                console.error('Error sending command to Jetson:', error);
+            }
+        }
+
+        function updateComponentStatus(id, statusText) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = statusText.toUpperCase();
+            el.className = 'hw-status';
+            const text = statusText.toLowerCase();
+            if (text === 'ok' || text === 'active' || text === 'calibrated') el.classList.add('ok');
+            else if (text === 'warn' || text === 'deg' || text === 'calibrating') el.classList.add('warn');
+            else el.classList.add('error');
+        }
+
+        // ============ CONTROL PANEL & MAP LAYOUT SECTION ============
+        let activeSection = 'dashboard';
+        const mapImg = new Image();
+        mapImg.src = "golden_map.png";
+
+        const MAP_ORIGIN_X = -5.08;
+        const MAP_ORIGIN_Y = -4.09;
+        const MAP_RESOLUTION = 0.05;
+        const MAP_WIDTH_PX = 303;
+        const MAP_HEIGHT_PX = 124;
+
+        let mapAnimTime = 0;
+        let mapAnimRAF = null;
+
+        function showSection(sectionName) {
+            activeSection = sectionName;
+
+            const dbSec = document.getElementById('dashboard-view-content');
+            const cpSec = document.getElementById('control-panel-view-content');
+            const adminSec = document.getElementById('admin-panel-view-content');
+            const navDb = document.getElementById('nav-dashboard');
+            const navCp = document.getElementById('nav-control');
+            const navAdmin = document.getElementById('nav-admin');
+
+            dbSec.style.display = 'none';
+            cpSec.style.display = 'none';
+            adminSec.style.display = 'none';
+            navDb.classList.remove('active');
+            navCp.classList.remove('active');
+            navAdmin.classList.remove('active');
+
+            if (sectionName === 'dashboard') {
+                dbSec.style.display = 'block';
+                navDb.classList.add('active');
+                document.querySelector('.header-title h1').textContent = 'Argo Mini';
+                document.querySelector('.header-title p').textContent = 'Advanced Robotics Analytics Dashboard & Control Hub';
+            } else if (sectionName === 'control') {
+                cpSec.style.display = 'block';
+                navCp.classList.add('active');
+                document.querySelector('.header-title h1').textContent = 'Control Panel';
+                document.querySelector('.header-title p').textContent = 'Interactive Map & Waypoint Navigation Mission Planner';
+
+                setTimeout(() => {
+                    const canvas = document.getElementById('controlMapCanvas');
+                    if (canvas) {
+                        const rect = canvas.parentElement.getBoundingClientRect();
+                        const dpr = window.devicePixelRatio || 1;
+                        canvas.width = rect.width * dpr;
+                        canvas.height = rect.height * dpr;
+                        const ctx = canvas.getContext('2d');
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.scale(dpr, dpr);
+                        canvas.style.width = rect.width + 'px';
+                        canvas.style.height = rect.height + 'px';
+                    }
+                }, 50);
+                renderWpTable();
+            } else if (sectionName === 'admin') {
+                adminSec.style.display = 'block';
+                navAdmin.classList.add('active');
+                document.querySelector('.header-title h1').textContent = 'Admin Panel';
+                document.querySelector('.header-title p').textContent = 'Restaurant Menu, Orders & Argo Communication';
+                fetchRestaurantData();
+                fetchNlpStatus();
+            }
+            playInteractionSound(880, 'sine', 0.05, 0.05);
+        }
+
+        // 1. Original blueprint radar map (dashboard) - upgraded to draw old-style radar sweep and local LiDAR scan points
+        function drawRadarMap(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+
+            if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+            }
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gold = '#e8b94a';
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            // Deep background color matching theme
+            ctx.fillStyle = isDark ? '#0a080f' : '#fcfbf7';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            const w = rect.width;
+            const h = rect.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const maxRadius = Math.min(w, h) * 0.44;
+
+            // Draw Vignette/Radar Glow
+            const glowGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxRadius);
+            glowGrad.addColorStop(0, 'rgba(232, 185, 74, 0.05)');
+            glowGrad.addColorStop(0.8, 'rgba(232, 185, 74, 0.01)');
+            glowGrad.addColorStop(1, 'rgba(232, 185, 74, 0)');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, maxRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Concentric Rings
+            ctx.strokeStyle = isDark ? 'rgba(232, 185, 74, 0.15)' : 'rgba(184, 134, 42, 0.12)';
+            ctx.lineWidth = 1;
+            const rings = 4;
+            for (let i = 1; i <= rings; i++) {
+                const r = (maxRadius / rings) * i;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw distance text on the rings
+                ctx.fillStyle = isDark ? 'rgba(232, 185, 74, 0.4)' : 'rgba(184, 134, 42, 0.4)';
+                ctx.font = '9px monospace';
+                ctx.fillText(`${(i * 1.5).toFixed(1)}m`, cx + r - 25, cy - 4);
+            }
+
+            // Crosshair Axes (Radar grid lines)
+            ctx.beginPath();
+            // Horizontal line
+            ctx.moveTo(cx - maxRadius, cy);
+            ctx.lineTo(cx + maxRadius, cy);
+            // Vertical line
+            ctx.moveTo(cx, cy - maxRadius);
+            ctx.lineTo(cx, cy + maxRadius);
+            // Diagonal lines
+            const angle45 = Math.PI / 4;
+            ctx.moveTo(cx - maxRadius * Math.cos(angle45), cy - maxRadius * Math.sin(angle45));
+            ctx.lineTo(cx + maxRadius * Math.cos(angle45), cy + maxRadius * Math.sin(angle45));
+            ctx.moveTo(cx - maxRadius * Math.cos(angle45), cy + maxRadius * Math.sin(angle45));
+            ctx.lineTo(cx + maxRadius * Math.cos(angle45), cy - maxRadius * Math.sin(angle45));
+            ctx.stroke();
+
+            // Radar Sweep Animation
+            const sweepAngle = (mapAnimTime / 800) % (Math.PI * 2); // Rotate based on mapAnimTime
+
+            // Draw sweep arc gradient
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, maxRadius, sweepAngle - 0.4, sweepAngle, false);
+            ctx.closePath();
+
+            const sweepGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxRadius);
+            sweepGrad.addColorStop(0, 'rgba(232, 185, 74, 0.2)');
+            sweepGrad.addColorStop(1, 'rgba(232, 185, 74, 0)');
+            ctx.fillStyle = sweepGrad;
+            ctx.fill();
+
+            // Draw the sweep leading edge line
+            ctx.strokeStyle = 'rgba(232, 185, 74, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + maxRadius * Math.cos(sweepAngle), cy + maxRadius * Math.sin(sweepAngle));
+            ctx.stroke();
+
+            // Live LiDAR Points (Bright Gold, drawn centered on the radar grid)
+            if (globalLidarPoints && globalLidarPoints.length > 0) {
+                ctx.fillStyle = isDark ? '#ffd97a' : '#d49b2a';
+                ctx.shadowColor = isDark ? '#ffd97a' : 'rgba(0,0,0,0)';
+                ctx.shadowBlur = isDark ? 8 : 0;
+
+                globalLidarPoints.forEach(p => {
+                    // Coordinates relative to the robot's local frame.
+                    // Scale factor: 1 meter = maxRadius / 6.0 meters (since 4 rings * 1.5m = 6.0m max radius)
+                    const scale = maxRadius / 6.0;
+                    const px = cx + p.x * scale;
+                    const py = cy - p.y * scale; // invert y for standard 2D canvas
+
+                    // Check if point falls within radar bounds
+                    const dist = Math.hypot(p.x, p.y);
+                    if (dist <= 6.0) {
+                        ctx.beginPath();
+                        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw Robot Marker at Center
+            ctx.shadowColor = gold;
+            ctx.shadowBlur = isDark ? 15 : 0;
+            ctx.fillStyle = gold;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Robot Nose orientation pointer (pointing straight forward in local frame, i.e., straight up)
+            const robotYaw = -Math.PI / 2;
+            ctx.strokeStyle = isDark ? '#fff7d6' : '#1a1408';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + 12 * Math.cos(robotYaw), cy + 12 * Math.sin(robotYaw));
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+        }
+
+        // 2. Real golden map coordinator (control panel)
+        function drawGoldenMap(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+
+            if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+            }
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gold = '#e8b94a';
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            // 1. Get Real-Time SLAM info
+            const info = (mapData && mapData.info) ? mapData.info : {
+                resolution: 0.05, width: 200, height: 200, originX: -5.0, originY: -5.0
+            };
+
+            // 2. Dynamic Scaling - always fit the SLAM map to the UI
+            const wImg = info.width;
+            const hImg = info.height;
+            const scale = Math.min(rect.width / wImg, rect.height / hImg) * 0.95;
+            const xOff = (rect.width - wImg * scale) / 2;
+            const yOff = (rect.height - hImg * scale) / 2;
+
+            // 3. Draw Background Tactical Grid
+            ctx.strokeStyle = isDark ? 'rgba(232,185,74,0.06)' : 'rgba(184,134,42,0.06)';
+            ctx.lineWidth = 1;
+            const gridSize = 30;
+            for (let x = 0; x < rect.width; x += gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rect.height); ctx.stroke(); }
+            for (let y = 0; y < rect.height; y += gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke(); }
+
+            // Coordinate conversion helper (Crucial for SLAM accuracy)
+            function toCanvas(rx, ry) {
+                const px = (rx - info.originX) / info.resolution;
+                const py = info.height - (ry - info.originY) / info.resolution;
+                return {
+                    x: xOff + px * scale,
+                    y: yOff + py * scale
+                };
+            }
+
+            // 4. Draw THE WALLS (Occupancy Grid)
+            if (mapData && mapData.obstacles) {
+                ctx.fillStyle = isDark ? '#e8b94a' : '#8a5f15';
+                mapData.obstacles.forEach(obs => {
+                    const px = obs[0];
+                    const py = info.height - obs[1];
+                    // Draw obstacles as solid tiles
+                    ctx.fillRect(xOff + px * scale, yOff + py * scale, Math.max(1, scale), Math.max(1, scale));
+                });
+            }
+
+            // 5. Draw Waypoints
+            if (typeof waypoints !== 'undefined') {
+                waypoints.forEach((wp, idx) => {
+                    const c = toCanvas(wp.x, wp.y);
+                    const pulse = (mapAnimTime / 1500 + idx * 0.3) % 1;
+                    ctx.strokeStyle = `rgba(232,185,74,${0.4 * (1 - pulse)})`;
+                    ctx.beginPath(); ctx.arc(c.x, c.y, 4 + pulse * 14, 0, Math.PI * 2); ctx.stroke();
+                    ctx.fillStyle = wp.locked ? '#573e1c' : gold;
+                    ctx.beginPath(); ctx.arc(c.x, c.y, 6, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#f6ecd2'; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText(wp.name, c.x, c.y - 12);
+                });
+            }
+
+            // 6. Draw Robot (The Star of the Show)
+            const r = toCanvas(currentRobotX, currentRobotY);
+            // Pulse effect
+            const rPulse = (mapAnimTime / 1200) % 1;
+            ctx.fillStyle = `rgba(232,185,74,${0.2 * (1 - rPulse)})`;
+            ctx.beginPath(); ctx.arc(r.x, r.y, 10 + rPulse * 20, 0, Math.PI * 2); ctx.fill();
+
+            // Main robot body
+            ctx.shadowColor = gold; ctx.shadowBlur = 15;
+            ctx.fillStyle = gold;
+            ctx.beginPath(); ctx.arc(r.x, r.y, 9, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Heading indicator
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(r.x, r.y);
+            ctx.lineTo(r.x + 15 * Math.cos(currentRobotYaw), r.y - 15 * Math.sin(currentRobotYaw));
+            ctx.stroke();
+        }
+
+        // Click map coordinate picker mapping
+        function setupControlMapClicks() {
+            const canvas = document.getElementById('controlMapCanvas');
+            if (!canvas) return;
+
+            canvas.addEventListener('click', (e) => {
+                if (activeSection !== 'control') return;
+                const rect = canvas.getBoundingClientRect();
+                const cx = e.clientX - rect.left;
+                const cy = e.clientY - rect.top;
+
+                const wImg = MAP_WIDTH_PX;
+                const hImg = MAP_HEIGHT_PX;
+                const scale = Math.min(rect.width / wImg, rect.height / hImg) * 0.95;
+                const xOff = (rect.width - wImg * scale) / 2;
+                const yOff = (rect.height - hImg * scale) / 2;
+
+                if (cx >= xOff && cx <= xOff + wImg * scale && cy >= yOff && cy <= yOff + hImg * scale) {
+                    const px = (cx - xOff) / scale;
+                    const py = (cy - yOff) / scale;
+
+                    const rx = MAP_ORIGIN_X + px * MAP_RESOLUTION;
+                    const ry = MAP_ORIGIN_Y + (MAP_HEIGHT_PX - py) * MAP_RESOLUTION;
+
+                    const nameInput = document.getElementById('wpNewName');
+                    const xInput = document.getElementById('wpNewX');
+                    const yInput = document.getElementById('wpNewY');
+
+                    if (xInput && yInput) {
+                        xInput.value = rx.toFixed(2);
+                        yInput.value = ry.toFixed(2);
+
+                        // Highlight border
+                        xInput.style.borderColor = 'var(--accent)';
+                        xInput.style.boxShadow = '0 0 10px var(--gold-glow)';
+                        yInput.style.borderColor = 'var(--accent)';
+                        yInput.style.boxShadow = '0 0 10px var(--gold-glow)';
+                        setTimeout(() => {
+                            xInput.style.borderColor = '';
+                            xInput.style.boxShadow = '';
+                            yInput.style.borderColor = '';
+                            yInput.style.boxShadow = '';
+                        }, 800);
+                    }
+
+                    if (nameInput && !nameInput.value) {
+                        let nextNum = 1;
+                        while (waypoints.some(wp => wp.name.toLowerCase() === `table ${nextNum}`)) {
+                            nextNum++;
+                        }
+                        nameInput.value = `Table ${nextNum}`;
+                        nameInput.focus();
+                    }
+                    playInteractionSound(700, 'sine', 0.08, 0.08);
+                }
+            });
+        }
+
+        function startMapLoop() {
+            cancelAnimationFrame(mapAnimRAF);
+            const loop = (t) => {
+                mapAnimTime = t;
+                if (activeSection === 'dashboard') {
+                    drawRadarMap('mapCanvas');
+                } else if (activeSection === 'control') {
+                    drawGoldenMap('controlMapCanvas');
+                }
+                mapAnimRAF = requestAnimationFrame(loop);
+            };
+            mapAnimRAF = requestAnimationFrame(loop);
+        }
+
+        function openEmergencyModal() {
+            playInteractionSound(180, 'triangle', 0.2, 0.2);
+            document.getElementById('emergencyModal').classList.add('open');
+        }
+        function confirmEmergencyStop() {
+            playInteractionSound(120, 'sawtooth', 0.5, 0.15);
+            sendCommand('emergency_stop');
+            closeEmergencyModal();
+        }
+        function closeEmergencyModal() {
+            document.getElementById('emergencyModal').classList.remove('open');
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const lightBtn = document.getElementById('theme-light-btn');
+            const darkBtn = document.getElementById('theme-dark-btn');
+            if (theme === 'dark') { lightBtn.classList.remove('active'); darkBtn.classList.add('active'); }
+            else { lightBtn.classList.add('active'); darkBtn.classList.remove('active'); }
+            playInteractionSound(880, 'sine', 0.05);
+            drawMap('mapCanvas');
+        }
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme');
+            setTheme(cur === 'dark' ? 'light' : 'dark');
+        }
+
+        // ==== Extra UI interactivity (no functional changes) ====
+        // Cursor-following spotlight + metric-card local glow
+        document.addEventListener('mousemove', (e) => {
+            document.body.style.setProperty('--mx', e.clientX + 'px');
+            document.body.style.setProperty('--my', e.clientY + 'px');
+            document.querySelectorAll('.metric-card').forEach(card => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+                card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+            });
+        });
+
+        // Button ripple position
+        document.addEventListener('mousemove', (e) => {
+            const t = e.target.closest('.btn');
+            if (!t) return;
+            const r = t.getBoundingClientRect();
+            t.style.setProperty('--rx', ((e.clientX - r.left) / r.width * 100) + '%');
+            t.style.setProperty('--ry', ((e.clientY - r.top) / r.height * 100) + '%');
+        });
+
+        // Soft hover tick sound on metric cards
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.metric-card, .waypoint-card').forEach(el => {
+                el.addEventListener('mouseenter', () => playInteractionSound(1200, 'sine', 0.025, 0.04));
+            });
+            document.querySelectorAll('.btn, .btn-sm, .nav-item, .theme-btn').forEach(el => {
+                el.addEventListener('mouseenter', () => playInteractionSound(1500, 'sine', 0.02, 0.03));
+            });
+        });
+
+        // ============ WAYPOINT EDITOR ============
+        // Live coordinates storage
+        let currentRobotX = 0.0;
+        let currentRobotY = 0.0;
+        let currentRobotYaw = 0.0;
+
+        // Master waypoint data — index 0 is always Base Station (locked)
+        let waypoints = [
+            { name: 'Base Station (Home)', x: 0.00, y: 0.00, locked: true },
+            { name: 'Table 1', x: -1.50, y: 1.50, locked: false },
+            { name: 'Table 2', x: 1.50, y: 1.50, locked: false },
+            { name: 'Table 3', x: -1.50, y: -1.50, locked: false },
+            { name: 'Table 4', x: 1.50, y: -1.50, locked: false },
+        ];
+
+        function getClosestWaypointName(x, y, fallback) {
+            if (waypoints.length === 0) return fallback || 'Unknown';
+            let closestWp = waypoints[0];
+            let minDist = Infinity;
+            waypoints.forEach(wp => {
+                const dist = Math.sqrt(Math.pow(wp.x - x, 2) + Math.pow(wp.y - y, 2));
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestWp = wp;
+                }
+            });
+            // If robot is within 0.8m of a waypoint, show its name
+            if (minDist <= 0.8) {
+                return closestWp.name;
+            }
+            return fallback || `Position (${x.toFixed(2)}, ${y.toFixed(2)})`;
+        }
+
+        function useCurrentRobotPose() {
+            const xInput = document.getElementById('wpNewX');
+            const yInput = document.getElementById('wpNewY');
+            const nameInput = document.getElementById('wpNewName');
+            if (xInput && yInput) {
+                xInput.value = currentRobotX.toFixed(2);
+                yInput.value = currentRobotY.toFixed(2);
+                // Glow input borders momentarily as visual confirmation
+                xInput.style.borderColor = 'var(--accent)';
+                yInput.style.borderColor = 'var(--accent)';
+                setTimeout(() => {
+                    xInput.style.borderColor = '';
+                    yInput.style.borderColor = '';
+                }, 800);
+            }
+            if (nameInput) {
+                nameInput.focus();
+            }
+            playInteractionSound(750, 'sine', 0.05, 0.08);
+        }
+
+        function openMapEditor() {
+            showSection('control');
+        }
+        function closeMapEditor() {
+            showSection('dashboard');
+        }
+
+        function renderWpTable() {
+            const tbody = document.getElementById('wpTableBody');
+            tbody.innerHTML = '';
+            waypoints.forEach((wp, i) => {
+                const tr = document.createElement('tr');
+                tr.id = 'wp-row-' + i;
+                tr.innerHTML = `
+                    <td>${i}</td>
+                    <td>${wp.locked ? '<strong>' + wp.name + '</strong>' : wp.name}</td>
+                    <td class="coord">${wp.x.toFixed(2)}</td>
+                    <td class="coord">${wp.y.toFixed(2)}</td>
+                    <td class="actions">
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            ${wp.locked ? '<span style="font-size:11px;color:var(--text-secondary);font-style:italic;">Locked</span>' :
+                        `<button class="wp-action-btn wp-btn-edit" onclick="editWpRow(${i})">Edit</button>
+                             <button class="wp-action-btn wp-btn-del" onclick="deleteWaypoint(${i})">Delete</button>`
+                    }
+                        </div>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('wpCountLabel').textContent = waypoints.length + ' waypoint' + (waypoints.length !== 1 ? 's' : '');
+        }
+
+        function editWpRow(i) {
+            const wp = waypoints[i];
+            const tr = document.getElementById('wp-row-' + i);
+            tr.innerHTML = `
+                <td>${i}</td>
+                <td><input class="wp-table-edit-input" id="eN${i}" value="${wp.name}" style="width:130px;"/></td>
+                <td><input class="wp-table-edit-input" id="eX${i}" type="number" step="0.01" value="${wp.x.toFixed(2)}"/></td>
+                <td><input class="wp-table-edit-input" id="eY${i}" type="number" step="0.01" value="${wp.y.toFixed(2)}"/></td>
+                <td class="actions">
+                    <div style="display:flex;gap:6px;">
+                        <button class="wp-action-btn wp-btn-save" onclick="saveWpRow(${i})">Save</button>
+                        <button class="wp-action-btn wp-btn-edit" onclick="renderWpTable()">Cancel</button>
+                    </div>
+                </td>`;
+
+            // Add Enter to save and Escape to cancel listeners
+            ['eN', 'eX', 'eY'].forEach(prefix => {
+                const el = document.getElementById(prefix + i);
+                if (el) {
+                    el.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            saveWpRow(i);
+                        } else if (e.key === 'Escape') {
+                            renderWpTable();
+                        }
+                    });
+                }
+            });
+            document.getElementById('eN' + i).focus();
+        }
+
+        function saveWpRow(i) {
+            const name = document.getElementById('eN' + i).value.trim();
+            const x = parseFloat(document.getElementById('eX' + i).value);
+            const y = parseFloat(document.getElementById('eY' + i).value);
+            if (!name) { alert('Waypoint name cannot be empty.'); return; }
+            if (isNaN(x) || isNaN(y)) { alert('X and Y must be valid numbers.'); return; }
+            waypoints[i] = { ...waypoints[i], name, x, y };
+            renderWpTable();
+            playInteractionSound(900, 'sine', 0.04, 0.08);
+        }
+
+        function addWaypoint() {
+            const name = document.getElementById('wpNewName').value.trim();
+            const x = parseFloat(document.getElementById('wpNewX').value);
+            const y = parseFloat(document.getElementById('wpNewY').value);
+            if (!name) { alert('Please enter a waypoint name.'); return; }
+            if (isNaN(x) || isNaN(y)) { alert('Please enter valid X and Y values.'); return; }
+            waypoints.push({ name, x, y, locked: false });
+
+            // Reset input values
+            document.getElementById('wpNewName').value = '';
+            document.getElementById('wpNewX').value = '';
+            document.getElementById('wpNewY').value = '';
+
+            renderWpTable();
+            playInteractionSound(1000, 'sine', 0.05, 0.1);
+            document.getElementById('wpNewName').focus();
+        }
+
+        function deleteWaypoint(i) {
+            if (waypoints[i].locked) return;
+            if (!confirm(`Delete "${waypoints[i].name}"?`)) return;
+            waypoints.splice(i, 1);
+            renderWpTable();
+            playInteractionSound(300, 'triangle', 0.06, 0.12);
+        }
+
+        async function fetchWaypoints() {
+            try {
+                const response = await fetch(`http://${JETSON_IP}:8080/api/waypoints`);
+                if (!response.ok) throw new Error('Failed to fetch waypoints');
+                const data = await response.json();
+
+                const newWaypoints = [];
+                const keys = Object.keys(data).sort((a, b) => parseInt(a) - parseInt(b));
+
+                keys.forEach(key => {
+                    const idx = parseInt(key);
+                    const item = data[key];
+                    let name = "";
+                    let locked = false;
+
+                    if (idx === 0) {
+                        name = "Base Station (Home)";
+                        locked = true;
+                    } else {
+                        if (idx === 1) name = "Table 1";
+                        else if (idx === 2) name = "Table 2";
+                        else if (idx === 3) name = "Table 3";
+                        else if (idx === 4) name = "Table 4";
+                        else name = `Table ${idx}`;
+                        locked = false;
+                    }
+
+                    newWaypoints.push({
+                        name: name,
+                        x: item.x || 0.0,
+                        y: item.y || 0.0,
+                        qz: item.qz !== undefined ? item.qz : 0.0,
+                        qw: item.qw !== undefined ? item.qw : 1.0,
+                        locked: locked
+                    });
+                });
+
+                if (newWaypoints.length > 0) {
+                    waypoints = newWaypoints;
+                    renderWpTable();
+                    // Trigger UI update
+                    const list = document.querySelector('.waypoint-list');
+                    if (list) {
+                        list.innerHTML = '';
+                        waypoints.forEach((wp, i) => {
+                            const isBase = i === 0;
+                            const div = document.createElement('div');
+                            div.className = 'waypoint-card';
+                            div.innerHTML = `
+                                <div class="wp-details">
+                                    <span class="wp-name">${wp.name}</span>
+                                    <span class="wp-coords">X: ${wp.x.toFixed(2)}, Y: ${wp.y.toFixed(2)}</span>
+                                </div>
+                                <div class="action-cluster">
+                                    ${!isBase ? `<button class="btn-sm btn-secondary" onclick="sendCommand('navigate',{waypoint:${i},mode:'queue'})">Queue</button>` : ''}
+                                    <button class="btn-sm btn-primary" onclick="sendCommand('navigate',{waypoint:${i},mode:'shift'})">${isBase ? 'Go Home' : 'Go'}</button>
+                                </div>`;
+                            list.appendChild(div);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not load waypoints.json from Jetson. Using local defaults.', err);
+            }
+        }
+
+        async function saveWaypointsToJetson() {
+            try {
+                const data = {};
+                waypoints.forEach((wp, idx) => {
+                    data[idx] = {
+                        x: wp.x,
+                        y: wp.y,
+                        qz: wp.qz !== undefined ? wp.qz : 0.0,
+                        qw: wp.qw !== undefined ? wp.qw : 1.0
+                    };
+                });
+
+                await fetch(`http://${JETSON_IP}:8080/api/waypoints`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (err) {
+                console.error('Error saving waypoints to Jetson server:', err);
+            }
+        }
+
+        function applyWaypointsToPanel() {
+            // Re-render the Mission Waypoint Registry panel with updated data
+            const list = document.querySelector('.waypoint-list');
+            if (!list) { closeMapEditor(); return; }
+            list.innerHTML = '';
+            waypoints.forEach((wp, i) => {
+                const isBase = i === 0;
+                const div = document.createElement('div');
+                div.className = 'waypoint-card';
+                div.innerHTML = `
+                    <div class="wp-details">
+                        <span class="wp-name">${wp.name}</span>
+                        <span class="wp-coords">X: ${wp.x.toFixed(2)}, Y: ${wp.y.toFixed(2)}</span>
+                    </div>
+                    <div class="action-cluster">
+                        ${!isBase ? `<button class="btn-sm btn-secondary" onclick="sendCommand('navigate',{waypoint:${i},mode:'queue'})">Queue</button>` : ''}
+                        <button class="btn-sm btn-primary" onclick="sendCommand('navigate',{waypoint:${i},mode:'shift'})">${isBase ? 'Go Home' : 'Go'}</button>
+                    </div>`;
+                list.appendChild(div);
+            });
+            closeMapEditor();
+            playInteractionSound(880, 'sine', 0.06, 0.12);
+            saveWaypointsToJetson();
+        }
+
+        // ============ ADMIN PANEL ============
+        let restaurantData = { menu: [], tables: {} };
+        let selectedAdminTable = 1;
+        let editingMenuId = null;
+        const ADMIN_TABLE_COUNT = 4;
+
+        async function restaurantApi(path, body) {
+            const response = await fetch(`http://${JETSON_IP}:8080/api/restaurant${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return response.json();
+        }
+
+        async function fetchRestaurantData() {
+            try {
+                const response = await fetch(`http://${JETSON_IP}:8080/api/restaurant`);
+                if (!response.ok) return;
+                restaurantData = await response.json();
+                renderMenuTable();
+                renderTableTabs();
+                renderTableOrders();
+            } catch (e) {
+                console.error('Failed to fetch restaurant data:', e);
+            }
+        }
+
+        function formatPrice(val) {
+            return '$' + Number(val).toFixed(2);
+        }
+
+        function renderMenuTable() {
+            const tbody = document.getElementById('menuTableBody');
+            const countLabel = document.getElementById('menuCountLabel');
+            if (!tbody) return;
+
+            const menu = restaurantData.menu || [];
+            countLabel.textContent = menu.length + ' item' + (menu.length !== 1 ? 's' : '');
+
+            if (menu.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">No menu items yet. Add your first dish above.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = menu.map(item => {
+                const isEditing = editingMenuId === item.id;
+                if (isEditing) {
+                    return `<tr>
+                        <td><input class="wp-table-edit-input" style="width:120px" id="edit-name-${item.id}" value="${escapeHtml(item.name)}" /></td>
+                        <td><input class="wp-table-edit-input" id="edit-price-${item.id}" type="number" step="0.01" value="${item.price}" /></td>
+                        <td><input class="wp-table-edit-input" style="width:140px" id="edit-desc-${item.id}" value="${escapeHtml(item.description)}" /></td>
+                        <td>
+                            <label class="avail-toggle">
+                                <input type="checkbox" ${item.available ? 'checked' : ''} onchange="toggleMenuAvailability('${item.id}')" />
+                                <span class="avail-slider"></span>
+                            </label>
+                        </td>
+                        <td class="actions">
+                            <button class="wp-action-btn wp-btn-save" onclick="saveMenuEdit('${item.id}')">Save</button>
+                            <button class="wp-action-btn wp-btn-edit" onclick="cancelMenuEdit()">Cancel</button>
+                        </td>
+                    </tr>`;
+                }
+                return `<tr>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td class="coord">${formatPrice(item.price)}</td>
+                    <td class="menu-desc-cell" title="${escapeHtml(item.description)}">${escapeHtml(item.description)}</td>
+                    <td>
+                        <label class="avail-toggle">
+                            <input type="checkbox" ${item.available ? 'checked' : ''} onchange="toggleMenuAvailability('${item.id}')" />
+                            <span class="avail-slider"></span>
+                        </label>
+                    </td>
+                    <td class="actions">
+                        <button class="wp-action-btn wp-btn-edit" onclick="startMenuEdit('${item.id}')">Edit</button>
+                        <button class="wp-action-btn wp-btn-del" onclick="deleteMenuItem('${item.id}')">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        async function addMenuItem() {
+            const name = document.getElementById('menuNewName').value.trim();
+            const price = parseFloat(document.getElementById('menuNewPrice').value);
+            const description = document.getElementById('menuNewDesc').value.trim();
+
+            if (!name || isNaN(price) || price < 0) {
+                alert('Please enter a valid name and price.');
+                return;
+            }
+
+            await restaurantApi('/menu', { action: 'add', name, price, description });
+            document.getElementById('menuNewName').value = '';
+            document.getElementById('menuNewPrice').value = '';
+            document.getElementById('menuNewDesc').value = '';
+            await fetchRestaurantData();
+            playInteractionSound(660, 'sine', 0.06, 0.1);
+        }
+
+        function startMenuEdit(id) {
+            editingMenuId = id;
+            renderMenuTable();
+        }
+
+        function cancelMenuEdit() {
+            editingMenuId = null;
+            renderMenuTable();
+        }
+
+        async function saveMenuEdit(id) {
+            const name = document.getElementById('edit-name-' + id).value.trim();
+            const price = parseFloat(document.getElementById('edit-price-' + id).value);
+            const description = document.getElementById('edit-desc-' + id).value.trim();
+
+            if (!name || isNaN(price) || price < 0) {
+                alert('Please enter a valid name and price.');
+                return;
+            }
+
+            await restaurantApi('/menu', { action: 'update', id, name, price, description });
+            editingMenuId = null;
+            await fetchRestaurantData();
+            playInteractionSound(660, 'sine', 0.06, 0.1);
+        }
+
+        async function deleteMenuItem(id) {
+            if (!confirm('Delete this menu item?')) return;
+            await restaurantApi('/menu', { action: 'delete', id });
+            if (editingMenuId === id) editingMenuId = null;
+            await fetchRestaurantData();
+            playInteractionSound(330, 'sine', 0.06, 0.1);
+        }
+
+        async function toggleMenuAvailability(id) {
+            await restaurantApi('/menu', { action: 'toggle', id });
+            await fetchRestaurantData();
+        }
+
+        function renderTableTabs() {
+            const container = document.getElementById('tableTabs');
+            if (!container) return;
+
+            let html = '';
+            for (let i = 1; i <= ADMIN_TABLE_COUNT; i++) {
+                const tableData = restaurantData.tables?.[String(i)] || { orders: [] };
+                const pendingCount = (tableData.orders || []).filter(o => o.status === 'pending').length;
+                const badge = pendingCount > 0 ? ` (${pendingCount})` : '';
+                html += `<button class="table-tab ${i === selectedAdminTable ? 'active' : ''}" onclick="selectAdminTable(${i})">Table ${i}${badge}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function selectAdminTable(tableNum) {
+            selectedAdminTable = tableNum;
+            renderTableTabs();
+            renderTableOrders();
+            playInteractionSound(550, 'sine', 0.04, 0.05);
+        }
+
+        function renderTableOrders() {
+            const ordersList = document.getElementById('ordersList');
+            const billTotal = document.getElementById('tableBillTotal');
+            const orderCount = document.getElementById('tableOrderCount');
+            const sessionLabel = document.getElementById('tableSessionLabel');
+            if (!ordersList) return;
+
+            const tableData = restaurantData.tables?.[String(selectedAdminTable)] || { sessionId: 1, orders: [] };
+            const orders = tableData.orders || [];
+            sessionLabel.textContent = 'Session #' + (tableData.sessionId || 1);
+
+            let confirmedTotal = 0;
+            orders.forEach(o => {
+                if (o.status === 'confirmed') confirmedTotal += o.total;
+            });
+
+            billTotal.textContent = formatPrice(confirmedTotal);
+            orderCount.textContent = orders.length + ' order' + (orders.length !== 1 ? 's' : '');
+
+            if (orders.length === 0) {
+                ordersList.innerHTML = '<div class="admin-empty">No orders for Table ' + selectedAdminTable + ' yet.<br><span style="font-size:12px">Orders appear here when customers place them.</span></div>';
+                return;
+            }
+
+            ordersList.innerHTML = orders.slice().reverse().map(order => {
+                const itemsHtml = order.items.map(it =>
+                    `${escapeHtml(it.name)} x${it.qty} — ${formatPrice(it.lineTotal || it.price * it.qty)}`
+                ).join('<br>');
+
+                const actionBtns = order.status === 'pending'
+                    ? `<div style="display:flex; gap:8px; margin-top:4px;">
+                        <button class="wp-action-btn wp-btn-save" onclick="orderAction('${order.id}', 'confirm')">Confirm</button>
+                        <button class="wp-action-btn wp-btn-del" onclick="orderAction('${order.id}', 'cancel')">Cancel</button>
+                       </div>`
+                    : '';
+
+                return `<div class="order-card ${order.status}">
+                    <div class="order-header">
+                        <span style="font-weight:700; font-size:13px;">Order #${order.id}</span>
+                        <span class="order-status-badge ${order.status}">${order.status}</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary);">${order.createdAt || ''}</div>
+                    <div class="order-items-list">${itemsHtml}</div>
+                    <div class="order-total-row">
+                        <span>Order Total</span>
+                        <span style="color:var(--accent)">${formatPrice(order.total)}</span>
+                    </div>
+                    ${actionBtns}
+                </div>`;
+            }).join('');
+        }
+
+        async function orderAction(orderId, action) {
+            await restaurantApi('/order/action', { table: selectedAdminTable, orderId, action });
+            await fetchRestaurantData();
+            playInteractionSound(action === 'confirm' ? 770 : 440, 'sine', 0.06, 0.1);
+        }
+
+        async function resetCurrentTable() {
+            if (!confirm('Start a new customer session for Table ' + selectedAdminTable + '? This will clear all past orders for this table.')) return;
+            await restaurantApi('/table/reset', { table: selectedAdminTable });
+            await fetchRestaurantData();
+            playInteractionSound(520, 'sine', 0.06, 0.12);
+        }
+
+        // ============ ARGO NLP COMMUNICATION ============
+        let nlpData = {
+            running: false,
+            sessionActive: false,
+            argoAwake: false,
+            voiceState: 'offline',
+            voiceClientRunning: false,
+            conversationLog: [],
+            managerAlerts: []
+        };
+
+        async function argoApi(path, body) {
+            const response = await fetch(`http://${JETSON_IP}:8080/api/argo/nlp${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body || {})
+            });
+            return response.json();
+        }
+
+        async function fetchNlpStatus() {
+            try {
+                const response = await fetch(`http://${JETSON_IP}:8080/api/argo/nlp`);
+                if (!response.ok) return;
+                nlpData = await response.json();
+                renderNlpPanel();
+            } catch (e) {
+                console.error('Failed to fetch NLP status:', e);
+            }
+        }
+
+        function renderNlpPanel() {
+            const runningPill = document.getElementById('nlpRunningPill');
+            const sessionPill = document.getElementById('nlpSessionPill');
+            const waypointPill = document.getElementById('nlpWaypointPill');
+            const startBtn = document.getElementById('nlpStartBtn');
+            const stopBtn = document.getElementById('nlpStopBtn');
+            const chatLog = document.getElementById('argoChatLog');
+            const alerts = document.getElementById('argoAlerts');
+            const errorBanner = document.getElementById('nlpErrorBanner');
+            const voiceOrb = document.getElementById('argoVoiceOrb');
+            const voiceLabel = document.getElementById('argoVoiceLabel');
+            const voiceHint = document.getElementById('argoVoiceHint');
+
+            if (!runningPill) return;
+
+            const running = !!nlpData.running;
+            const active = !!nlpData.sessionActive;
+            const voiceRunning = !!nlpData.voiceClientRunning;
+            const voiceState = nlpData.voiceState || 'offline';
+
+            runningPill.textContent = running ? 'Agent Running' : 'Agent Stopped';
+            runningPill.className = 'argo-status-pill ' + (running ? 'on' : 'off');
+
+            sessionPill.textContent = voiceRunning ? 'Mic & Speaker On' : (active ? 'Session Active' : 'Session Idle');
+            sessionPill.className = 'argo-status-pill ' + (voiceRunning ? 'on' : (active ? 'warn' : 'off'));
+
+            const waypoint = nlpData.currentWaypoint || 'docking_station';
+            const status = nlpData.robotStatus || 'IDLE';
+            waypointPill.textContent = `${status} @ ${waypoint}`;
+            waypointPill.className = 'argo-status-pill ' + (status === 'NAVIGATING' ? 'warn' : '');
+
+            startBtn.disabled = running && active && voiceRunning;
+            stopBtn.disabled = !running && !active && !voiceRunning;
+
+            const wakeBtn = document.getElementById('nlpWakeBtn');
+            if (wakeBtn) {
+                const awake = !!nlpData.argoAwake;
+                wakeBtn.disabled = !running;
+                wakeBtn.textContent = awake ? '😴 Put to Sleep' : '💤 Wake Up Argo';
+                wakeBtn.style.background = awake ? 'var(--success, #22c55e)' : '';
+                wakeBtn.style.color = awake ? '#fff' : '';
+            }
+
+            const voiceLabels = {
+                offline: { icon: '🎙️', text: 'Voice offline', hint: 'Start communication to activate the robot microphone and speaker.' },
+                connecting: { icon: '🔗', text: 'Connecting voice...', hint: 'Linking microphone and speaker to Argo.' },
+                idle: { icon: '🤖', text: 'Argo is ready', hint: 'Say "Hey Argo" to wake the assistant, then speak your request.' },
+                listening: { icon: '👂', text: 'Argo is listening...', hint: 'Speak clearly toward the robot microphone.' },
+                processing: { icon: '💭', text: 'Argo is thinking...', hint: 'Processing your request.' },
+                speaking: { icon: '🔊', text: 'Argo is speaking...', hint: 'Listen to Argo\'s reply from the robot speaker.' }
+            };
+            const voiceUi = voiceLabels[voiceState] || voiceLabels.offline;
+            if (voiceOrb) {
+                voiceOrb.textContent = voiceUi.icon;
+                voiceOrb.className = 'argo-voice-orb' + (
+                    ['listening', 'speaking', 'processing'].includes(voiceState) ? ' ' + voiceState : ''
+                );
+            }
+            if (voiceLabel) voiceLabel.textContent = voiceUi.text;
+            if (voiceHint && (active || voiceRunning)) voiceHint.textContent = voiceUi.hint;
+
+            if (errorBanner) {
+                const err = (nlpData.lastError || '').trim();
+                if (err) {
+                    errorBanner.style.display = 'block';
+                    errorBanner.textContent = err;
+                } else {
+                    errorBanner.style.display = 'none';
+                    errorBanner.textContent = '';
+                }
+            }
+
+            const log = nlpData.conversationLog || [];
+            if (log.length === 0) {
+                chatLog.innerHTML = '<div class="admin-empty">Live transcript will appear here during voice conversations.</div>';
+            } else {
+                chatLog.innerHTML = log.map(entry => {
+                    const roleLabel = entry.role === 'argo' ? 'Argo' : (entry.source === 'admin' ? 'Admin (test)' : 'Guest');
+                    const bubbleClass = entry.role === 'argo' ? 'argo' : 'guest';
+                    return `<div class="argo-chat-bubble ${bubbleClass}">
+                        <div class="argo-chat-meta">${roleLabel} · ${escapeHtml(entry.timestamp || '')}</div>
+                        ${escapeHtml(entry.text)}
+                    </div>`;
+                }).join('');
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+
+            const alertList = (nlpData.managerAlerts || []).filter(a => !a.acknowledged);
+            if (alertList.length === 0) {
+                alerts.innerHTML = '';
+            } else {
+                alerts.innerHTML = alertList.map(alert =>
+                    `<div class="argo-alert-card">Manager alert: ${escapeHtml(alert.reason)} · ${escapeHtml(alert.timestamp || '')}</div>`
+                ).join('');
+            }
+        }
+
+        async function startArgoCommunication() {
+            const result = await argoApi('/start', {});
+            if (result.status === 'error') {
+                alert(result.message || 'Failed to start Argo communication.');
+                return;
+            }
+            await fetchNlpStatus();
+            playInteractionSound(770, 'sine', 0.06, 0.12);
+        }
+
+        async function stopArgoCommunication() {
+            if (!confirm('Stop Argo communication session?')) return;
+            await argoApi('/stop', {});
+            await fetchNlpStatus();
+            playInteractionSound(440, 'sine', 0.06, 0.1);
+        }
+
+        async function toggleArgoWake() {
+            const result = await argoApi('/wakeup', {});
+            if (result.status === 'error') { alert(result.message || 'Agent is not running.'); return; }
+            await fetchNlpStatus();
+            playInteractionSound(result.argoAwake ? 880 : 440, 'sine', 0.06, 0.1);
+        }
+
+        // Init
+        window.onload = () => {
+            updateState();
+            fetchWaypoints();
+            setupControlMapClicks();
+
+            // Pressing Enter in add waypoint inputs submits the form
+            ['wpNewName', 'wpNewX', 'wpNewY'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            addWaypoint();
+                        }
+                    });
+                }
+            });
+
+            setInterval(updateState, 800);
+            setInterval(() => {
+                if (activeSection === 'admin') {
+                    fetchRestaurantData();
+                    fetchNlpStatus();
+                }
+            }, 2000);
+            startMapLoop();
+
+            ['menuNewName', 'menuNewPrice', 'menuNewDesc'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') addMenuItem();
+                    });
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (activeSection === 'dashboard') {
+                    drawRadarMap('mapCanvas');
+                } else if (activeSection === 'control') {
+                    drawGoldenMap('controlMapCanvas');
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>

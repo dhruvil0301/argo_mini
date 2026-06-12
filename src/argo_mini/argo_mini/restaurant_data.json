@@ -1,0 +1,31 @@
+{
+  "menu": [
+    {
+      "id": "1",
+      "name": "Margherita Pizza",
+      "price": 12.99,
+      "description": "Classic tomato, mozzarella & basil",
+      "available": true
+    },
+    {
+      "id": "2",
+      "name": "Caesar Salad",
+      "price": 8.5,
+      "description": "Romaine, parmesan, croutons & dressing",
+      "available": true
+    },
+    {
+      "id": "4",
+      "name": "Chocolate Lava Cake",
+      "price": 6.99,
+      "description": "Warm molten chocolate dessert",
+      "available": true
+    }
+  ],
+  "tables": {
+    "3": {
+      "sessionId": 2,
+      "orders": []
+    }
+  }
+}

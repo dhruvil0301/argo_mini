@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+
+    <!--
+      Persistent navigation: never gives up on a goal.
+      Recovery cycle (RoundRobin) runs in order on each failure:
+        1. Clear local + global costmaps
+        2. Spin 90°
+        3. Back up 25 cm
+        4. Wait 3 s
+      After each recovery step, replanning and path-following restart.
+      The only way this tree stops is:
+        - Goal reached (SUCCESS)
+        - Action preempted by a new goal from the user (external cancel)
+    -->
+
+    <RecoveryNode number_of_retries="1000000" name="NavigateRecovery">
+
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+        </RateController>
+        <FollowPath path="{path}" controller_id="FollowPath"/>
+      </PipelineSequence>
+
+      <RoundRobin name="RecoveryActions">
+
+        <Sequence name="ClearCostmaps">
+          <ClearEntireCostmap name="ClearLocalCostmap"
+            service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap name="ClearGlobalCostmap"
+            service_name="global_costmap/clear_entirely_global_costmap"/>
+        </Sequence>
+
+        <Spin spin_dist="1.57"/>
+
+        <BackUp backup_dist="0.25" backup_speed="0.10"/>
+
+        <Wait wait_duration="3.0"/>
+
+      </RoundRobin>
+
+    </RecoveryNode>
+
+  </BehaviorTree>
+</root>
