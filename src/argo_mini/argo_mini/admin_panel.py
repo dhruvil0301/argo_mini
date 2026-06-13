@@ -13,8 +13,11 @@ import sys
 import threading
 import time
 import uuid
+import re
 
 from dotenv import dotenv_values, load_dotenv
+
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = os.path.join(PROJECT_DIR, '.env')
@@ -50,6 +53,10 @@ class _ExternalProcess:
     """Sentinel: makes get_state() report voiceClientRunning=True
     when the voice client was started outside the admin panel."""
     def poll(self): return None   # None = still running
+
+
+def _strip_ansi(text):
+    return ANSI_RE.sub("", text or "")
 
 
 class RestaurantManager:
@@ -230,6 +237,8 @@ class ArgoNlpManager:
     self._bridge_ready = threading.Event()
     self._response_waiters = []
     self._nav_process = None
+    self._nav_output = []
+    self.nav_status_message = "Navigation launcher is idle."
     self.conversation_log = []
     self.manager_alerts = []
     self.session_active = False
@@ -308,6 +317,8 @@ class ArgoNlpManager:
         "navRunning": (
           self._nav_process is not None and self._nav_process.poll() is None
         ),
+        "navStatusMessage": self.nav_status_message,
+        "navLogs": list(self._nav_output),
         "argoAwake": self.argo_awake,
         "conversationLog": list(self.conversation_log),
         "managerAlerts": list(self.manager_alerts),
@@ -488,7 +499,17 @@ class ArgoNlpManager:
         for line in self._nav_process.stdout:
           clean = line.rstrip()
           if clean:
-            print(f"[ArgoNav] {clean}")
+            plain = _strip_ansi(clean)
+            with self._lock:
+              self._nav_output.append(plain)
+              self._nav_output = self._nav_output[-120:]
+              if "Navigation stack is LIVE" in plain or "All Systems Nominal" in plain:
+                self.nav_status_message = "Navigation ready."
+              elif "Starting" in plain:
+                self.nav_status_message = plain
+              elif "Timeout" in plain or "abort" in plain.lower():
+                self.nav_status_message = plain
+            print(f"[ArgoNav] {plain}")
       except Exception as exc:
         print(f"[ArgoNav] Log reader stopped: {exc}")
 
@@ -508,9 +529,12 @@ class ArgoNlpManager:
   def start_navigation(self):
     with self._lock:
       if self._nav_process and self._nav_process.poll() is None:
+        self.nav_status_message = "Navigation launcher is already running."
         return {"status": "ok", "message": "Navigation script is already running."}
 
     if not os.path.exists(NAV_SCRIPT_PATH):
+      with self._lock:
+        self.nav_status_message = f"Navigation script not found: {NAV_SCRIPT_PATH}"
       return {"status": "error", "message": f"Navigation script not found: {NAV_SCRIPT_PATH}"}
 
     nav_dir = os.path.dirname(NAV_SCRIPT_PATH) or PROJECT_DIR
@@ -523,6 +547,9 @@ class ArgoNlpManager:
       cmd = ['bash', nav_cmd]
 
     try:
+      with self._lock:
+        self._nav_output = []
+        self.nav_status_message = "Launching navigation stack..."
       self._nav_process = subprocess.Popen(
         cmd,
         cwd=nav_dir,
@@ -534,10 +561,14 @@ class ArgoNlpManager:
       self._start_nav_log_reader()
     except Exception as exc:
       self._nav_process = None
+      with self._lock:
+        self.nav_status_message = f"Navigation launch failed: {exc}"
       return {"status": "error", "message": str(exc)}
 
     time.sleep(0.5)
     if self._nav_process.poll() is not None:
+      with self._lock:
+        self.nav_status_message = f"Navigation script exited immediately: {NAV_SCRIPT_PATH}"
       return {
         "status": "error",
         "message": f"Navigation script exited immediately: {NAV_SCRIPT_PATH}",
@@ -552,6 +583,7 @@ class ArgoNlpManager:
     with self._lock:
       if not self._nav_process or self._nav_process.poll() is not None:
         self._nav_process = None
+        self.nav_status_message = "Navigation launcher is already stopped."
         return {"status": "ok", "message": "Navigation script is already stopped."}
 
       self._nav_process.terminate()
@@ -560,6 +592,7 @@ class ArgoNlpManager:
       except subprocess.TimeoutExpired:
         self._nav_process.kill()
       self._nav_process = None
+      self.nav_status_message = "Navigation launcher stopped."
       return {"status": "ok", "message": "Stopped navigation script."}
 
   def _wait_for_bridge(self, timeout_sec):

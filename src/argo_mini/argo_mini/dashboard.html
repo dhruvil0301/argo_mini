@@ -2543,6 +2543,30 @@
         </div>
     </div>
 
+    <div id="navigationModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 680px; text-align: left;">
+            <div class="modal-icon">▶</div>
+            <h2 id="navModalTitle">Starting Navigation</h2>
+            <p id="navModalMessage">Preparing the navigation stack.</p>
+            <div style="margin: 18px 0 14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color: var(--text-secondary);">
+                    <span id="navModalStep">Waiting for startup logs...</span>
+                    <span id="navModalState">Starting</span>
+                </div>
+                <div style="height:10px; border-radius:999px; background: color-mix(in oklab, var(--border-color) 70%, transparent); overflow:hidden;">
+                    <div id="navModalBar" style="height:100%; width:18%; border-radius:999px; background: var(--accent-gradient); transition: width .25s ease;"></div>
+                </div>
+            </div>
+            <div style="max-height: 260px; overflow:auto; background: color-mix(in oklab, var(--bg-app) 70%, transparent); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.5;">
+                <div id="navModalLogs" style="white-space: pre-wrap; word-break: break-word; color: var(--text-primary);"></div>
+            </div>
+            <div class="modal-buttons" style="margin-top: 18px;">
+                <button class="btn btn-secondary" onclick="closeNavigationModal()">Close</button>
+                <button class="btn btn-primary" onclick="refreshNavigationState()">Refresh Status</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Jetson robot server address (override via localStorage if needed)
         const JETSON_IP = "192.168.1.15";
@@ -2931,7 +2955,7 @@
             if (navBtn) {
                 navBtn.disabled = true;
                 const navLabel = document.getElementById('navBtnLabel');
-                if (navLabel) navLabel.textContent = goingOn ? 'Starting...' : 'Stopping...';
+                if (navLabel) navLabel.textContent = goingOn ? 'Starting navigation...' : 'Stopping navigation...';
             }
             try {
                 const endpoint = goingOn ? '/api/argo/nav/start' : '/api/argo/nav/stop';
@@ -2943,12 +2967,16 @@
                 const result = await response.json();
                 navigationRunning = goingOn;
                 syncNavigationButton();
+                updateNavigationModalFromState();
                 playInteractionSound(goingOn ? 720 : 420, 'sine', 0.08, 0.08);
-                if (result.message) alert(result.message);
+                openNavigationModal(
+                    goingOn ? 'Navigation Started' : 'Navigation Stopped',
+                    result.message || (goingOn ? 'Navigation launcher started.' : 'Navigation launcher stopped.')
+                );
                 await updateState();
             } catch (error) {
                 console.error('Error starting navigation script:', error);
-                alert('Could not start navigation script. Check the Jetson server logs.');
+                openNavigationModal('Navigation Error', 'Could not start navigation launcher. Please check the logs shown here.');
                 if (navBtn) navBtn.checked = navigationRunning;
             } finally {
                 if (navBtn) {
@@ -3932,6 +3960,9 @@
             argoAwake: false,
             voiceState: 'offline',
             voiceClientRunning: false,
+            navRunning: false,
+            navStatusMessage: 'Navigation launcher is idle.',
+            navLogs: [],
             conversationLog: [],
             managerAlerts: []
         };
@@ -3952,9 +3983,56 @@
                 nlpData = await response.json();
                 navigationRunning = !!nlpData.navRunning;
                 syncNavigationButton();
+                updateNavigationModalFromState();
                 renderNlpPanel();
             } catch (e) {
                 console.error('Failed to fetch NLP status:', e);
+            }
+        }
+
+        function refreshNavigationState() {
+            fetchNlpStatus();
+        }
+
+        function closeNavigationModal() {
+            const modal = document.getElementById('navigationModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function openNavigationModal(title, message) {
+            const modal = document.getElementById('navigationModal');
+            if (!modal) return;
+            document.getElementById('navModalTitle').textContent = title;
+            document.getElementById('navModalMessage').textContent = message;
+            modal.classList.add('open');
+        }
+
+        function updateNavigationModalFromState() {
+            const logs = Array.isArray(nlpData.navLogs) ? nlpData.navLogs : [];
+            const status = nlpData.navStatusMessage || (navigationRunning ? 'Navigation is starting.' : 'Navigation is idle.');
+            const ready = !!nlpData.navRunning;
+            const title = ready ? 'Navigation Ready' : 'Starting Navigation';
+            const stepText = logs.length ? logs[logs.length - 1] : status;
+            const percent = ready ? 100 : Math.min(85, 10 + logs.length * 6);
+
+            const titleEl = document.getElementById('navModalTitle');
+            const messageEl = document.getElementById('navModalMessage');
+            const stepEl = document.getElementById('navModalStep');
+            const stateEl = document.getElementById('navModalState');
+            const barEl = document.getElementById('navModalBar');
+            const logsEl = document.getElementById('navModalLogs');
+
+            if (titleEl) titleEl.textContent = title;
+            if (messageEl) messageEl.textContent = status;
+            if (stepEl) stepEl.textContent = stepText;
+            if (stateEl) stateEl.textContent = ready ? 'Ready for navigation' : 'Starting';
+            if (barEl) barEl.style.width = percent + '%';
+            if (logsEl) {
+                logsEl.innerHTML = logs.slice(-12).map(line => line
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                ).join('<br>');
             }
         }
 
