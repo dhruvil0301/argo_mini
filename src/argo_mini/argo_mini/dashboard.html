@@ -2894,7 +2894,7 @@
                 const response = await fetch(`http://${JETSON_IP}:8080/api/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: 'waypoint_cmd', args: { command: commandText } }),
+                    body: JSON.stringify({ command: 'waypoint_cmd', args: commandText }),
                 });
                 const result = await response.json();
                 console.log('Waypoint command response from Jetson:', result);

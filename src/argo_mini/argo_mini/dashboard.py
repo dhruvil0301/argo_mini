@@ -373,10 +373,15 @@ class DashboardHTTPHandler(SimpleHTTPRequestHandler):
                 command = req.get('command')
                 args = req.get('args', {})
                 
-                print(f"Received Command: {command} with args: {args}")
+                if isinstance(args, str):
+                    waypoint_text = args.strip().lower()
+                else:
+                    waypoint_text = str(args.get('command', '')).strip().lower()
+
+                print(f"Received Command: {command} -> {waypoint_text or args}")
                 
                 if command == 'waypoint_cmd' and dashboard_node:
-                    raw = str(args.get('command', '')).strip().lower()
+                    raw = waypoint_text
                     compact = raw.replace(' ', '')
                     if compact and compact[0] in {'c', 'g'} and compact[1:].isdigit():
                         wp_id = int(compact[1:])
