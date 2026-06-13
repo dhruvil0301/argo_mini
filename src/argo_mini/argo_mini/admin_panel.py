@@ -223,6 +223,7 @@ class ArgoNlpManager:
     self._voice_process = None
     self._voice_log_thread = None
     self._process_log_thread = None
+    self._nav_log_thread = None
     self._bridge_thread = None
     self._bridge_loop = None
     self._bridge_ws = None
@@ -478,6 +479,22 @@ class ArgoNlpManager:
     self._voice_log_thread = threading.Thread(target=_reader, daemon=True)
     self._voice_log_thread.start()
 
+  def _start_nav_log_reader(self):
+    if not self._nav_process or not self._nav_process.stdout:
+      return
+
+    def _reader():
+      try:
+        for line in self._nav_process.stdout:
+          clean = line.rstrip()
+          if clean:
+            print(f"[ArgoNav] {clean}")
+      except Exception as exc:
+        print(f"[ArgoNav] Log reader stopped: {exc}")
+
+    self._nav_log_thread = threading.Thread(target=_reader, daemon=True)
+    self._nav_log_thread.start()
+
   def _stop_voice_client_locked(self):
     if self._voice_process and self._voice_process.poll() is None:
       self._voice_process.terminate()
@@ -498,7 +515,9 @@ class ArgoNlpManager:
 
     nav_dir = os.path.dirname(NAV_SCRIPT_PATH) or PROJECT_DIR
     nav_cmd = NAV_SCRIPT_PATH
-    if os.access(NAV_SCRIPT_PATH, os.X_OK):
+    if nav_cmd.endswith(".py"):
+      cmd = [sys.executable, nav_cmd]
+    elif os.access(NAV_SCRIPT_PATH, os.X_OK):
       cmd = [nav_cmd]
     else:
       cmd = ['bash', nav_cmd]
@@ -512,9 +531,17 @@ class ArgoNlpManager:
         text=True,
         bufsize=1,
       )
+      self._start_nav_log_reader()
     except Exception as exc:
       self._nav_process = None
       return {"status": "error", "message": str(exc)}
+
+    time.sleep(0.5)
+    if self._nav_process.poll() is not None:
+      return {
+        "status": "error",
+        "message": f"Navigation script exited immediately: {NAV_SCRIPT_PATH}",
+      }
 
     return {
       "status": "ok",
