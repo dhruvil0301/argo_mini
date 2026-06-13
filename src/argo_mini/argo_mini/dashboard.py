@@ -397,8 +397,9 @@ class DashboardHTTPHandler(SimpleHTTPRequestHandler):
                     # New logic: Send the Waypoint Index to the Manager!
                     wp_id = int(args.get('waypoint', 0))
                     msg = String()
-                    msg.data = f"g{wp_id}"
+                    msg.data = f"g {wp_id}"
                     dashboard_node.cmd_pub.publish(msg)
+                    print(f"Published waypoint command: {msg.data}")
                     dashboard_node.target_destination = f"Table {wp_id}" if wp_id > 0 else "HOME"
                     dashboard_node.robot_status = "Navigating"
 

@@ -2885,7 +2885,7 @@
 
         async function sendWaypointGoal(index) {
             const tableNum = getWaypointTableNumber(index);
-            await sendDashboardWaypointCommand(`g ${tableNum}`);
+            await sendCommand('navigate', { waypoint: tableNum });
         }
 
         async function sendDashboardWaypointCommand(commandText) {
