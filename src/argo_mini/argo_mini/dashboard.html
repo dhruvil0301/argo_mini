@@ -3410,13 +3410,13 @@
         let currentRobotY = 0.0;
         let currentRobotYaw = 0.0;
 
-        // Master waypoint data — index 0 is always Base Station (locked)
+        // Master waypoint data — index 0 is Base Station / Home
         let waypoints = [
-            { name: 'Base Station (Home)', x: 0.00, y: 0.00, locked: true, tableNum: 0 },
-            { name: 'Table 1', x: -1.50, y: 1.50, locked: false, tableNum: 1 },
-            { name: 'Table 2', x: 1.50, y: 1.50, locked: false, tableNum: 2 },
-            { name: 'Table 3', x: -1.50, y: -1.50, locked: false, tableNum: 3 },
-            { name: 'Table 4', x: 1.50, y: -1.50, locked: false, tableNum: 4 },
+            { name: 'Base Station (Home)', x: 0.00, y: 0.00, tableNum: 0 },
+            { name: 'Table 1', x: -1.50, y: 1.50, tableNum: 1 },
+            { name: 'Table 2', x: 1.50, y: 1.50, tableNum: 2 },
+            { name: 'Table 3', x: -1.50, y: -1.50, tableNum: 3 },
+            { name: 'Table 4', x: 1.50, y: -1.50, tableNum: 4 },
         ];
 
         function parseTableNumber(name) {
@@ -3428,7 +3428,7 @@
             const wp = waypoints[index];
             if (!wp) return index;
             if (typeof wp.tableNum === 'number') return wp.tableNum;
-            if (wp.locked) return 0;
+            if (index === 0) return 0;
             const parsed = parseTableNumber(wp.name);
             return parsed !== null ? parsed : index;
         }
@@ -3487,15 +3487,13 @@
                 tr.id = 'wp-row-' + i;
                 tr.innerHTML = `
                     <td>${i}</td>
-                    <td>${wp.locked ? '<strong>' + wp.name + '</strong>' : wp.name}</td>
+                    <td>${i === 0 ? '<strong>' + wp.name + '</strong>' : wp.name}</td>
                     <td class="coord">${wp.x.toFixed(2)}</td>
                     <td class="coord">${wp.y.toFixed(2)}</td>
                     <td class="actions">
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            ${wp.locked ? '<span style="font-size:11px;color:var(--text-secondary);font-style:italic;">Locked</span>' :
-                        `<button class="wp-action-btn wp-btn-edit" onclick="editWpRow(${i})">Edit</button>
-                             <button class="wp-action-btn wp-btn-del" onclick="deleteWaypoint(${i})">Delete</button>`
-                    }
+                            <button class="wp-action-btn wp-btn-edit" onclick="editWpRow(${i})">Edit</button>
+                            <button class="wp-action-btn wp-btn-del" onclick="deleteWaypoint(${i})">Delete</button>
                         </div>
                     </td>`;
                 tbody.appendChild(tr);
@@ -3543,7 +3541,7 @@
             const tableNum = getWaypointTableNumber(i);
             waypoints[i] = {
                 ...waypoints[i],
-                name: tableNum === 0 ? 'Base Station (Home)' : `Table ${tableNum}`,
+                name,
                 x,
                 y,
                 tableNum
@@ -3559,7 +3557,7 @@
             if (!name) { alert('Please enter a waypoint name.'); return; }
             if (isNaN(x) || isNaN(y)) { alert('Please enter valid X and Y values.'); return; }
             const tableNum = parseTableNumber(name) || (waypoints.reduce((max, wp) => Math.max(max, wp.tableNum || 0), 0) + 1);
-            waypoints.push({ name: `Table ${tableNum}`, x, y, locked: false, tableNum });
+            waypoints.push({ name: `Table ${tableNum}`, x, y, tableNum });
 
             // Reset input values
             document.getElementById('wpNewName').value = '';
@@ -3572,7 +3570,6 @@
         }
 
         function deleteWaypoint(i) {
-            if (waypoints[i].locked) return;
             if (!confirm(`Delete "${waypoints[i].name}"?`)) return;
             waypoints.splice(i, 1);
             renderWpTable();
@@ -3596,11 +3593,8 @@
                     const idx = key.toLowerCase().startsWith('c') ? parseInt(key.slice(1), 10) : parseInt(key, 10);
                     const item = data[key];
                     let name = "";
-                    let locked = false;
-
                     if (idx === 0) {
-                        name = "Base Station (Home)";
-                        locked = true;
+                        name = item.name || "Base Station (Home)";
                     } else {
                         const tableNum = item.tableNum || idx;
                         if (tableNum === 1) name = "Table 1";
@@ -3608,7 +3602,6 @@
                         else if (tableNum === 3) name = "Table 3";
                         else if (tableNum === 4) name = "Table 4";
                         else name = `Table ${tableNum}`;
-                        locked = false;
                     }
 
                     newWaypoints.push({
@@ -3617,7 +3610,6 @@
                         y: item.y || 0.0,
                         qz: item.qz !== undefined ? item.qz : 0.0,
                         qw: item.qw !== undefined ? item.qw : 1.0,
-                        locked: locked,
                         tableNum: idx === 0 ? 0 : (item.tableNum || idx)
                     });
                 });
