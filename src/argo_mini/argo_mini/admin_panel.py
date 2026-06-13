@@ -485,41 +485,41 @@ class ArgoNlpManager:
         self._voice_process.wait(timeout=5)
       except subprocess.TimeoutExpired:
         self._voice_process.kill()
-    self._voice_process = None
-    self.voice_state = "offline"
+      self._voice_process = None
+      self.voice_state = "offline"
 
-    def start_navigation(self):
-      with self._lock:
-        if self._nav_process and self._nav_process.poll() is None:
-          return {"status": "ok", "message": "Navigation script is already running."}
+  def start_navigation(self):
+    with self._lock:
+      if self._nav_process and self._nav_process.poll() is None:
+        return {"status": "ok", "message": "Navigation script is already running."}
 
-      if not os.path.exists(NAV_SCRIPT_PATH):
-        return {"status": "error", "message": f"Navigation script not found: {NAV_SCRIPT_PATH}"}
+    if not os.path.exists(NAV_SCRIPT_PATH):
+      return {"status": "error", "message": f"Navigation script not found: {NAV_SCRIPT_PATH}"}
 
-      nav_dir = os.path.dirname(NAV_SCRIPT_PATH) or PROJECT_DIR
-      nav_cmd = NAV_SCRIPT_PATH
-      if os.access(NAV_SCRIPT_PATH, os.X_OK):
-        cmd = [nav_cmd]
-      else:
-        cmd = ['bash', nav_cmd]
+    nav_dir = os.path.dirname(NAV_SCRIPT_PATH) or PROJECT_DIR
+    nav_cmd = NAV_SCRIPT_PATH
+    if os.access(NAV_SCRIPT_PATH, os.X_OK):
+      cmd = [nav_cmd]
+    else:
+      cmd = ['bash', nav_cmd]
 
-      try:
-        self._nav_process = subprocess.Popen(
-          cmd,
-          cwd=nav_dir,
-          stdout=subprocess.PIPE,
-          stderr=subprocess.STDOUT,
-          text=True,
-          bufsize=1,
-        )
-      except Exception as exc:
-        self._nav_process = None
-        return {"status": "error", "message": str(exc)}
+    try:
+      self._nav_process = subprocess.Popen(
+        cmd,
+        cwd=nav_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+      )
+    except Exception as exc:
+      self._nav_process = None
+      return {"status": "error", "message": str(exc)}
 
-      return {
-        "status": "ok",
-        "message": f"Started navigation script: {NAV_SCRIPT_PATH}",
-      }
+    return {
+      "status": "ok",
+      "message": f"Started navigation script: {NAV_SCRIPT_PATH}",
+    }
 
   def stop_navigation(self):
     with self._lock:
