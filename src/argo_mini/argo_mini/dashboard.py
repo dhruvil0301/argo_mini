@@ -72,6 +72,18 @@ def apply_agent_robot_command(payload: dict):
     print(f"[NLP] Navigation dispatched → waypoint {wp_id} ('{target}')")
 
 
+def resolve_waypoint_pose(waypoints, wp_id: int):
+    """Return the waypoint entry for a numeric waypoint id."""
+    if not waypoints:
+        return None
+    for wp in waypoints:
+        if int(wp.get("tableNum", -1)) == int(wp_id):
+            return wp
+    if 0 <= wp_id < len(waypoints):
+        return waypoints[wp_id]
+    return None
+
+
 class DashboardNode(Node):
     def __init__(self):
         super().__init__('dashboard_node')
@@ -400,6 +412,23 @@ class DashboardHTTPHandler(SimpleHTTPRequestHandler):
                     msg.data = f"g {wp_id}"
                     dashboard_node.cmd_pub.publish(msg)
                     print(f"Published waypoint command: {msg.data}")
+
+                    wp = resolve_waypoint_pose(dashboard_node.waypoints, wp_id)
+                    if wp is not None:
+                        goal = PoseStamped()
+                        goal.header.stamp = dashboard_node.get_clock().now().to_msg()
+                        goal.header.frame_id = "map"
+                        goal.pose.position.x = float(wp.get("x", 0.0))
+                        goal.pose.position.y = float(wp.get("y", 0.0))
+                        goal.pose.orientation.w = 1.0
+                        dashboard_node.goal_pub.publish(goal)
+                        print(
+                            f"Published goal pose for waypoint {wp_id}: "
+                            f"x={goal.pose.position.x:.3f}, y={goal.pose.position.y:.3f}"
+                        )
+                    else:
+                        print(f"Waypoint pose not found for id {wp_id}")
+
                     dashboard_node.target_destination = f"Table {wp_id}" if wp_id > 0 else "HOME"
                     dashboard_node.robot_status = "Navigating"
 
