@@ -21,6 +21,7 @@ ENV_FILE = os.path.join(PROJECT_DIR, '.env')
 DATA_FILE = os.path.join(PROJECT_DIR, 'restaurant_data.json')
 AGENT_SCRIPT = os.path.join(PROJECT_DIR, 'rest_agent.py')
 VOICE_SCRIPT = os.path.join(PROJECT_DIR, 'voice_client.py')
+NAV_SCRIPT_PATH = os.environ.get('ARGO_NAV_SCRIPT_PATH', '/home/argo/argo_mini_ws/start_argo_nav_sh')
 AGENT_WS_URL = os.environ.get('ARGO_AGENT_WS_URL', 'ws://127.0.0.1:8765')
 MAX_LOG_ENTRIES = 200
 AGENT_STARTUP_TIMEOUT_SEC = 15
@@ -35,6 +36,8 @@ ADMIN_POST_ROUTES = {
     '/api/restaurant/order',
     '/api/restaurant/order/action',
     '/api/restaurant/table/reset',
+    '/api/argo/nav/start',
+    '/api/argo/nav/stop',
     '/api/argo/nlp/start',
     '/api/argo/nlp/stop',
     '/api/argo/nlp/wakeup',
@@ -225,6 +228,7 @@ class ArgoNlpManager:
     self._bridge_ws = None
     self._bridge_ready = threading.Event()
     self._response_waiters = []
+    self._nav_process = None
     self.conversation_log = []
     self.manager_alerts = []
     self.session_active = False
@@ -299,6 +303,9 @@ class ArgoNlpManager:
         "voiceState": self.voice_state,
         "voiceClientRunning": (
           self._voice_process is not None and self._voice_process.poll() is None
+        ),
+        "navRunning": (
+          self._nav_process is not None and self._nav_process.poll() is None
         ),
         "argoAwake": self.argo_awake,
         "conversationLog": list(self.conversation_log),
@@ -480,6 +487,53 @@ class ArgoNlpManager:
         self._voice_process.kill()
     self._voice_process = None
     self.voice_state = "offline"
+
+    def start_navigation(self):
+      with self._lock:
+        if self._nav_process and self._nav_process.poll() is None:
+          return {"status": "ok", "message": "Navigation script is already running."}
+
+      if not os.path.exists(NAV_SCRIPT_PATH):
+        return {"status": "error", "message": f"Navigation script not found: {NAV_SCRIPT_PATH}"}
+
+      nav_dir = os.path.dirname(NAV_SCRIPT_PATH) or PROJECT_DIR
+      nav_cmd = NAV_SCRIPT_PATH
+      if os.access(NAV_SCRIPT_PATH, os.X_OK):
+        cmd = [nav_cmd]
+      else:
+        cmd = ['bash', nav_cmd]
+
+      try:
+        self._nav_process = subprocess.Popen(
+          cmd,
+          cwd=nav_dir,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.STDOUT,
+          text=True,
+          bufsize=1,
+        )
+      except Exception as exc:
+        self._nav_process = None
+        return {"status": "error", "message": str(exc)}
+
+      return {
+        "status": "ok",
+        "message": f"Started navigation script: {NAV_SCRIPT_PATH}",
+      }
+
+  def stop_navigation(self):
+    with self._lock:
+      if not self._nav_process or self._nav_process.poll() is not None:
+        self._nav_process = None
+        return {"status": "ok", "message": "Navigation script is already stopped."}
+
+      self._nav_process.terminate()
+      try:
+        self._nav_process.wait(timeout=5)
+      except subprocess.TimeoutExpired:
+        self._nav_process.kill()
+      self._nav_process = None
+      return {"status": "ok", "message": "Stopped navigation script."}
 
   def _wait_for_bridge(self, timeout_sec):
     deadline = time.time() + timeout_sec
@@ -668,6 +722,10 @@ class AdminPanelRouter:
             return self._handle_table_reset(req)
         if path == '/api/argo/nlp/start':
             return 200, self.nlp.start_session()
+        if path == '/api/argo/nav/start':
+            return 200, self.nlp.start_navigation()
+        if path == '/api/argo/nav/stop':
+            return 200, self.nlp.stop_navigation()
         if path == '/api/argo/nlp/stop':
             return 200, self.nlp.stop_session()
         if path == '/api/argo/nlp/wakeup':

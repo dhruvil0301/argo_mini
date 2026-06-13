@@ -9,9 +9,11 @@ import threading
 import math
 import asyncio
 import os
+import subprocess
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from bleak import BleakClient
 from admin_panel import handle_admin_get, handle_admin_post, is_admin_route, admin_router
+from std_msgs.msg import String
 
 # ==================== BMS CONFIGURATION ====================
 BMS_ADDRESS = "A5:C2:37:2A:22:EC"
@@ -31,6 +33,10 @@ latest_bms_data = {
 
 # Centralized Waypoints File path for sync
 WAYPOINTS_FILE = os.path.expanduser('~/argo_mini_ws/src/argo_mini/waypoints/waypoints.json')
+WAYPOINT_MANAGER_SCRIPT = os.environ.get(
+    'ARGO_WAYPOINT_MANAGER_SCRIPT',
+    '/home/argo/argo_mini_ws/src/argo_mini/argo_mini/waypoint_manager.py'
+)
 
 dashboard_node = None
 
@@ -58,8 +64,8 @@ def apply_agent_robot_command(payload: dict):
         return
     target = payload.get("parameters", {}).get("target_waypoint", "") or payload.get("target", "")
     wp_id = waypoint_name_to_index(target)
-    msg = Int32()
-    msg.data = wp_id
+    msg = String()
+    msg.data = f"g{wp_id}"
     dashboard_node.cmd_pub.publish(msg)
     dashboard_node.target_destination = f"Table {wp_id}" if wp_id > 0 else "HOME"
     dashboard_node.robot_status = "Navigating"
@@ -91,7 +97,7 @@ class DashboardNode(Node):
         # Master waypoints list synced from JSON
         self.waypoints = self.load_waypoints_from_file()
 
-        self.cmd_pub = self.create_publisher(Int32, '/dashboard_waypoint_cmd', 10)
+        self.cmd_pub = self.create_publisher(String, '/dashboard_waypoint_cmd', 10)
         
         # Navigation Publishers
         self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
@@ -165,7 +171,14 @@ class DashboardNode(Node):
                     
                     # Sort keys safely: 0 first (Home), then others
                     def sort_keys(k):
-                        if k.lower() == 'home' or k == '0': return 0
+                        kl = str(k).lower()
+                        if kl in {'home', '0', 'c0', 'g0', 'c 0', 'g 0'}: return 0
+                        if kl.startswith('c ') or kl.startswith('g '):
+                            try: return int(kl.split()[1])
+                            except: return 999
+                        if kl.startswith('c') or kl.startswith('g'):
+                            try: return int(kl[1:])
+                            except: return 999
                         try: return int(k)
                         except: return 999
                     
@@ -174,12 +187,21 @@ class DashboardNode(Node):
                     for k in sorted_keys:
                         v = data[k]
                         # Use Name from JSON or generate one
-                        name = v.get("name", "HOME" if k == '0' or k.lower() == 'home' else f"Table {k}")
+                        kl = str(k).lower()
+                        if kl in {'home', '0', 'c0', 'g0', 'c 0', 'g 0'}:
+                            idx = 0
+                        elif kl.startswith('c ') or kl.startswith('g '):
+                            idx = int(kl.split()[1])
+                        else:
+                            idx = int(kl[1:] if kl[:1] in {'c', 'g'} else kl)
+                        table_num = v.get("tableNum", idx)
+                        name = v.get("name", "HOME" if idx == 0 else f"Table {table_num}")
                         ui_waypoints.append({
                             "name": name,
                             "x": float(v["x"]),
                             "y": float(v["y"]),
-                            "locked": (k == '0' or k.lower() == 'home')
+                            "locked": idx == 0,
+                            "tableNum": idx
                         })
                     return ui_waypoints
             except Exception as e:
@@ -192,13 +214,15 @@ class DashboardNode(Node):
         try:
             data = {}
             for i, wp in enumerate(self.waypoints):
-                key = str(i)
-                if wp['name'].lower() in ['home', 'base station (home)']: key = "0"
+                table_num = int(wp.get('tableNum', i))
+                key = "c 0" if table_num == 0 else f"c {table_num}"
                 data[key] = {
                     "x": float(wp['x']),
                     "y": float(wp['y']),
                     "qz": 0.0,
-                    "qw": 1.0
+                    "qw": 1.0,
+                    "name": wp.get('name', 'Base Station (Home)' if table_num == 0 else f"Table {table_num}"),
+                    "tableNum": table_num
                 }
             with open(WAYPOINTS_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -351,11 +375,24 @@ class DashboardHTTPHandler(SimpleHTTPRequestHandler):
                 
                 print(f"Received Command: {command} with args: {args}")
                 
-                if command == 'navigate' and dashboard_node:
+                if command == 'waypoint_cmd' and dashboard_node:
+                    raw = str(args.get('command', '')).strip().lower()
+                    compact = raw.replace(' ', '')
+                    if compact and compact[0] in {'c', 'g'} and compact[1:].isdigit():
+                        wp_id = int(compact[1:])
+                        msg = String()
+                        msg.data = raw
+                        dashboard_node.cmd_pub.publish(msg)
+                        dashboard_node.target_destination = f"Table {wp_id}" if wp_id > 0 else "HOME"
+                        dashboard_node.robot_status = "Navigating" if compact[0] == 'g' else "Waypoint Saved"
+                    else:
+                        print(f"Invalid waypoint command: {raw}")
+
+                elif command == 'navigate' and dashboard_node:
                     # New logic: Send the Waypoint Index to the Manager!
                     wp_id = int(args.get('waypoint', 0))
-                    msg = Int32()
-                    msg.data = wp_id
+                    msg = String()
+                    msg.data = f"g{wp_id}"
                     dashboard_node.cmd_pub.publish(msg)
                     dashboard_node.target_destination = f"Table {wp_id}" if wp_id > 0 else "HOME"
                     dashboard_node.robot_status = "Navigating"
@@ -488,6 +525,36 @@ def run_bms_thread():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(bms_telemetry_loop())
 
+def start_waypoint_manager_process():
+    if not os.path.exists(WAYPOINT_MANAGER_SCRIPT):
+        print(f"[System Warning] Waypoint manager script not found: {WAYPOINT_MANAGER_SCRIPT}")
+        return None
+
+    cmd = [WAYPOINT_MANAGER_SCRIPT] if os.access(WAYPOINT_MANAGER_SCRIPT, os.X_OK) else ['python3', WAYPOINT_MANAGER_SCRIPT]
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=os.path.dirname(WAYPOINT_MANAGER_SCRIPT) or os.path.dirname(os.path.abspath(__file__)),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        def _reader():
+            try:
+                for line in proc.stdout:
+                    print(f"[WaypointManager] {line.rstrip()}")
+            except Exception as exc:
+                print(f"[WaypointManager] Log reader stopped: {exc}")
+
+        threading.Thread(target=_reader, daemon=True).start()
+        print(f"[System] Waypoint manager started: {WAYPOINT_MANAGER_SCRIPT}")
+        return proc
+    except Exception as e:
+        print(f"[System Warning] Could not start waypoint manager: {e}")
+        return None
+
 # ==================== MAIN ====================
 def main():
     # Automatically clear Bluetooth cache and restart service at start
@@ -504,6 +571,7 @@ def main():
     global dashboard_node
     rclpy.init()
     dashboard_node = DashboardNode()
+    start_waypoint_manager_process()
     
     # Thread 1: HTTP UI Server
     http_server = ThreadingHTTPServer(('0.0.0.0', 8080), DashboardHTTPHandler)

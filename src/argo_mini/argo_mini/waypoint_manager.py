@@ -3,7 +3,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from geometry_msgs.msg import PoseWithCovarianceStamped, PointStamped
-from std_msgs.msg import Int32
+from std_msgs.msg import String
 from nav2_msgs.action import NavigateToPose
 import json
 import os
@@ -26,7 +26,7 @@ class WaypointManager(Node):
 
         # Dashboard Command Subscriber (Key Integration)
         self.dashboard_sub = self.create_subscription(
-            Int32, '/dashboard_waypoint_cmd', self.dashboard_cmd_cb, 10)
+            String, '/dashboard_waypoint_cmd', self.dashboard_cmd_cb, 10)
 
         # Navigation Action Client
         self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose')
@@ -48,9 +48,25 @@ class WaypointManager(Node):
 
     def dashboard_cmd_cb(self, msg):
         """Handle commands coming from the web dashboard"""
-        wp_id = msg.data
-        self.get_logger().info(f"Dashboard requested waypoint {wp_id}")
-        threading.Thread(target=self.go_to, args=(wp_id,), daemon=True).start()
+        raw = str(msg.data).strip().lower()
+        if not raw:
+            return
+        compact = raw.replace(' ', '')
+        action = compact[0]
+        try:
+            wp_id = int(compact[1:])
+        except ValueError:
+            self.get_logger().warning(f"Invalid dashboard command: {raw}")
+            return
+
+        if action == 'c':
+            self.get_logger().info(f"Dashboard requested save command c {wp_id}")
+            threading.Thread(target=self.save_current_as, args=(wp_id,), daemon=True).start()
+        elif action == 'g':
+            self.get_logger().info(f"Dashboard requested goal command g {wp_id}")
+            threading.Thread(target=self.go_to, args=(wp_id,), daemon=True).start()
+        else:
+            self.get_logger().warning(f"Unknown dashboard command prefix: {raw}")
 
     def load_waypoints(self):
         if os.path.exists(WAYPOINTS_FILE):
@@ -80,8 +96,31 @@ class WaypointManager(Node):
         print('  q         Quit')
         print('='*55)
         if self.waypoints:
-            for k, v in sorted(self.waypoints.items(), key=lambda x: int(x[0])):
-                label = 'HOME' if k == '0' else f'Table {k}'
+            def sort_key(item):
+                key = str(item[0]).lower()
+                if key in {'0', 'c0', 'g0', 'c 0', 'g 0', 'home'}:
+                    return 0
+                if key.startswith('c ') or key.startswith('g '):
+                    try:
+                        return int(key.split()[1])
+                    except (IndexError, ValueError):
+                        return 999
+                for prefix in ('c', 'g'):
+                    if key.startswith(prefix) and key[1:].isdigit():
+                        return int(key[1:])
+                if key.isdigit():
+                    return int(key)
+                return 999
+
+            for k, v in sorted(self.waypoints.items(), key=sort_key):
+                clean = str(k).lower()
+                if clean in {'0', 'c0', 'g0', 'c 0', 'g 0', 'home'}:
+                    idx = 0
+                elif clean.startswith('c ') or clean.startswith('g '):
+                    idx = int(clean.split()[1])
+                else:
+                    idx = int(clean[1:] if clean[:1] in {'c', 'g'} else clean)
+                label = 'HOME' if idx == 0 else f'Table {idx}'
                 print(f'  {label}: x={float(v["x"]):.3f}  y={float(v["y"]):.3f}')
         print()
 
@@ -89,7 +128,7 @@ class WaypointManager(Node):
         if not self.current_pose:
             print("ERROR: No current pose available. Set 2D Pose Estimate in RViz.")
             return
-        key = str(n)
+        key = f"c {n}"
         self.waypoints[key] = {
             "x": self.current_pose.position.x,
             "y": self.current_pose.position.y,
@@ -97,13 +136,13 @@ class WaypointManager(Node):
             "qw": self.current_pose.orientation.w
         }
         self.save_waypoints()
-        print(f"Saved waypoint {n} from current pose.")
+        print(f"Saved waypoint {key} from current pose.")
 
     def save_clicked_as(self, n):
         if not self.clicked_point:
             print("ERROR: Click a point in RViz first using 'Publish Point'.")
             return
-        key = str(n)
+        key = f"c {n}"
         self.waypoints[key] = {
             "x": self.clicked_point.x,
             "y": self.clicked_point.y,
@@ -111,16 +150,16 @@ class WaypointManager(Node):
             "qw": 1.0
         }
         self.save_waypoints()
-        print(f"Saved waypoint {n} from clicked point.")
+        print(f"Saved waypoint {key} from clicked point.")
 
     def go_to(self, n):
-        key = str(n)
+        key = f"c{n}"
         if key not in self.waypoints:
             print(f"ERROR: Waypoint {n} not found.")
             return
 
         wp = self.waypoints[key]
-        print(f"\n[NAV] Sending goal to waypoint {n} → x={wp['x']:.3f}, y={wp['y']:.3f}")
+        print(f"\n[NAV] Sending goal to waypoint g{n} → x={wp['x']:.3f}, y={wp['y']:.3f}")
 
         if not self.nav_client.wait_for_server(timeout_sec=8.0):
             print("ERROR: Nav2 action server not available!")
@@ -144,18 +183,18 @@ class WaypointManager(Node):
     def goal_response_cb(self, future, n):
         goal_handle = future.result()
         if not goal_handle.accepted:
-            print(f"\n[FAIL] Goal to waypoint {n} was REJECTED by Nav2.")
+            print(f"\n[FAIL] Goal to waypoint g{n} was REJECTED by Nav2.")
             return
-        print(f"\n[ACCEPTED] Moving toward waypoint {n}...")
+        print(f"\n[ACCEPTED] Moving toward waypoint g{n}...")
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(lambda f: self.result_cb(f, n))
 
     def result_cb(self, future, n):
         result = future.result()
         if result.status == 4:  # Succeeded
-            print(f"\n[SUCCESS] Reached waypoint {n}!")
+            print(f"\n[SUCCESS] Reached waypoint g{n}!")
         else:
-            print(f"\n[FAIL] Failed to reach waypoint {n} (status: {result.status})")
+            print(f"\n[FAIL] Failed to reach waypoint g{n} (status: {result.status})")
 
 def main():
     rclpy.init()
