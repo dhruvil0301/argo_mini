@@ -153,17 +153,22 @@ class WaypointManager(Node):
         print(f"Saved waypoint {key} from clicked point.")
 
     def go_to(self, n):
-        key = f"c{n}"
-        if key not in self.waypoints:
+        key = f"c {n}"
+        alt_key = f"c{n}"
+        if key not in self.waypoints and alt_key not in self.waypoints:
             print(f"ERROR: Waypoint {n} not found.")
             return
 
-        wp = self.waypoints[key]
-        print(f"\n[NAV] Sending goal to waypoint g{n} → x={wp['x']:.3f}, y={wp['y']:.3f}")
+        wp = self.waypoints.get(key, self.waypoints.get(alt_key))
+        self.get_logger().info(
+            f"Waypoint found for g{n}: key={key if key in self.waypoints else alt_key}, "
+            f"x={float(wp['x']):.3f}, y={float(wp['y']):.3f}"
+        )
 
         if not self.nav_client.wait_for_server(timeout_sec=8.0):
-            print("ERROR: Nav2 action server not available!")
+            self.get_logger().error("Nav2 action server '/navigate_to_pose' not available.")
             return
+        self.get_logger().info("Nav2 action server is available.")
 
         goal = NavigateToPose.Goal()
         goal.pose.header.frame_id = "map"
@@ -173,6 +178,7 @@ class WaypointManager(Node):
         goal.pose.pose.orientation.z = float(wp.get('qz', 0.0))
         goal.pose.pose.orientation.w = float(wp.get('qw', 1.0))
 
+        self.get_logger().info(f"Publishing goal for g{n} to Nav2.")
         future = self.nav_client.send_goal_async(goal, feedback_callback=self.feedback_cb)
         future.add_done_callback(lambda f: self.goal_response_cb(f, n))
 
@@ -183,18 +189,18 @@ class WaypointManager(Node):
     def goal_response_cb(self, future, n):
         goal_handle = future.result()
         if not goal_handle.accepted:
-            print(f"\n[FAIL] Goal to waypoint g{n} was REJECTED by Nav2.")
+            self.get_logger().error(f"Goal to waypoint g{n} was rejected by Nav2.")
             return
-        print(f"\n[ACCEPTED] Moving toward waypoint g{n}...")
+        self.get_logger().info(f"Goal to waypoint g{n} accepted by Nav2.")
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(lambda f: self.result_cb(f, n))
 
     def result_cb(self, future, n):
         result = future.result()
         if result.status == 4:  # Succeeded
-            print(f"\n[SUCCESS] Reached waypoint g{n}!")
+            self.get_logger().info(f"Reached waypoint g{n}.")
         else:
-            print(f"\n[FAIL] Failed to reach waypoint g{n} (status: {result.status})")
+            self.get_logger().error(f"Failed to reach waypoint g{n} (status: {result.status})")
 
 def main():
     rclpy.init()
